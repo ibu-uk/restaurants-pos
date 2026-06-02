@@ -134,6 +134,9 @@ if ($id > 0) {
       <div><span class="bi-label">Table / <span class="ar">الطاولة</span></span><span><?php echo htmlspecialchars($invoice['table_name']); ?></span></div>
       <?php endif; ?>
       <div><span class="bi-label">Payment / <span class="ar">طريقة الدفع</span></span><span><?php echo htmlspecialchars($invoice['payment_mode'] ?? 'Cash'); ?></span></div>
+      <?php if (!empty($invoice['payment_reference'])): ?>
+      <div><span class="bi-label">Ref / <span class="ar">المرجع</span></span><span><?php echo htmlspecialchars($invoice['payment_reference']); ?></span></div>
+      <?php endif; ?>
     </div>
 
     <div class="receipt-items">

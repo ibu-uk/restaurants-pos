@@ -192,12 +192,13 @@ tbody td.change-td { color:#27ae60; }
         <th>User</th>
         <th>Total (KD)</th>
         <th>Payment</th>
+        <th>Ref</th>
         <th>Change</th>
         <th>Actions</th>
       </tr>
     </thead>
     <tbody id="inv-table-body">
-      <tr><td colspan="8" class="loading">Loading invoices...</td></tr>
+      <tr><td colspan="9" class="loading">Loading invoices...</td></tr>
     </tbody>
   </table>
 
@@ -286,6 +287,7 @@ function renderTable(invoices) {
         html += '<td style="color:#aac4ff">' + (inv.user_name || 'Unknown') + '</td>';
         html += '<td class="amount">' + parseFloat(inv.total).toFixed(3) + '</td>';
         html += '<td style="color:#888">' + (inv.payment_mode || 'Cash') + '</td>';
+        html += '<td style="color:#666;font-size:12px">' + (inv.payment_reference || '-') + '</td>';
         html += '<td class="change-td">' + parseFloat(inv.change_due).toFixed(3) + '</td>';
         html += '<td style="white-space:nowrap">';
         html += '<button class="btn-view" onclick="showDetail(' + inv.id + ')">&#128065; View</button> ';
@@ -429,7 +431,7 @@ function exportToExcel() {
         return;
     }
     
-    var csv = 'Invoice No,Date,User,Total (KD),Payment,Change (KD)\n';
+    var csv = 'Invoice No,Date,User,Total (KD),Payment,Ref,Change (KD)\n';
     var totalAmount = 0;
     
     for (var i = 0; i < allInvoices.length; i++) {
@@ -439,6 +441,7 @@ function exportToExcel() {
         csv += (inv.user_name || 'Unknown') + ',';
         csv += parseFloat(inv.total).toFixed(3) + ',';
         csv += (inv.payment_mode || 'Cash') + ',';
+        csv += (inv.payment_reference || '') + ',';
         csv += parseFloat(inv.change_due).toFixed(3) + '\n';
         totalAmount += parseFloat(inv.total);
     }
@@ -506,6 +509,7 @@ function generatePDFContent(invoices, data) {
         rows += '<td>' + (inv.user_name || 'Unknown') + '</td>';
         rows += '<td>' + parseFloat(inv.total).toFixed(3) + '</td>';
         rows += '<td>' + (inv.payment_mode || 'Cash') + '</td>';
+        rows += '<td>' + (inv.payment_reference || '-') + '</td>';
         rows += '<td>' + parseFloat(inv.change_due).toFixed(3) + '</td>';
         rows += '</tr>';
     }
@@ -539,9 +543,9 @@ function generatePDFContent(invoices, data) {
     html += '<div><b>User:</b> ' + userName + '</div>';
     html += '</div>';
     html += '<table>';
-    html += '<thead><tr><th>Invoice No</th><th>Date</th><th>User</th><th>Total (KD)</th><th>Payment</th><th>Change (KD)</th></tr></thead>';
+    html += '<thead><tr><th>Invoice No</th><th>Date</th><th>User</th><th>Total (KD)</th><th>Payment</th><th>Ref</th><th>Change (KD)</th></tr></thead>';
     html += '<tbody>' + rows + '</tbody>';
-    html += '<tfoot><tr class="total-row"><td colspan="3">Total</td><td>' + totalAmount.toFixed(3) + ' KD</td><td>-</td><td>-</td></tr></tfoot>';
+    html += '<tfoot><tr class="total-row"><td colspan="3">Total</td><td>' + totalAmount.toFixed(3) + ' KD</td><td>-</td><td>-</td><td>-</td></tr></tfoot>';
     html += '</table>';
     html += '</body></html>';
     

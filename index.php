@@ -264,6 +264,10 @@ html, body { height:100%; font-family: Tahoma, Arial, sans-serif; background:#f5
             <option value="Keeta">Keeta</option>
           </select>
         </div>
+        <div class="cash-row" id="payment-ref-row" style="display:none;">
+          <label>Reference:</label>
+          <input type="text" id="payment-ref" placeholder="Enter reference number" style="width:100%;padding:6px;border:1px solid #dee2e6;border-radius:4px;">
+        </div>
         <div class="cash-row">
           <label>Cash Paid:</label>
           <input type="number" id="cash-input" placeholder="Optional / for change" step="0.001" min="0">
@@ -570,6 +574,17 @@ function removeItem(index) {
 document.getElementById('payment-mode').addEventListener('change', function() {
     var mode = this.value;
     var cashInput = document.getElementById('cash-input');
+    var refRow = document.getElementById('payment-ref-row');
+    var refInput = document.getElementById('payment-ref');
+    
+    // Show reference field for KNET, Keeta, Talabat
+    if (mode === 'KNET' || mode === 'Keeta' || mode === 'Talabat') {
+        refRow.style.display = 'flex';
+    } else {
+        refRow.style.display = 'none';
+        refInput.value = '';
+    }
+    
     if (mode === 'Talabat' || mode === 'Keeta') {
         // Full payment, no change - lock cash input to total
         cashInput.value = calcTotal().toFixed(3);
@@ -622,11 +637,13 @@ function saveOrder(printReceipt) {
     var tableId = document.getElementById('table-select').value;
     var tableSel = document.getElementById('table-select');
     var tableName = tableId ? tableSel.options[tableSel.selectedIndex].getAttribute('data-name') : null;
+    var paymentRef = document.getElementById('payment-ref').value.trim();
 
     var payload = {
         items:        orderItems,
         total:        total,
         payment_mode: paymentMode,
+        payment_reference: paymentRef,
         cash_paid:    cashPaid,
         change_due:   change,
         table_id:     tableId ? parseInt(tableId) : null,
@@ -652,6 +669,8 @@ function saveOrder(printReceipt) {
                     var ci = document.getElementById('cash-input');
                     ci.value = ''; ci.readOnly = false; ci.style.background = '#fff';
                     document.getElementById('payment-mode').value = 'Cash';
+                    document.getElementById('payment-ref').value = '';
+                    document.getElementById('payment-ref-row').style.display = 'none';
                     document.getElementById('table-select').value = '';
                     document.getElementById('table-status-badge').style.display = 'none';
                     renderOrder();
@@ -675,6 +694,8 @@ document.getElementById('btn-clear').onclick = function() {
         var ci = document.getElementById('cash-input');
         ci.value = ''; ci.readOnly = false; ci.style.background = '#fff';
         document.getElementById('payment-mode').value = 'Cash';
+        document.getElementById('payment-ref').value = '';
+        document.getElementById('payment-ref-row').style.display = 'none';
         renderOrder();
     });
 };

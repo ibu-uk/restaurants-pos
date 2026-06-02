@@ -5,7 +5,7 @@
 define('DB_HOST', 'localhost');
 define('DB_USER', 'root');       // Change if needed
 define('DB_PASS', '');           // Change if needed
-define('DB_NAME', 'pos_salhiya');
+define('DB_NAME', 'pos_bawarchi');
 
 $conn = new mysqli(DB_HOST, DB_USER, DB_PASS, DB_NAME);
 

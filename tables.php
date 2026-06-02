@@ -245,10 +245,16 @@ html, body { min-height:100%; font-family:Tahoma,Arial,sans-serif; background:#f
         <div class="modal-pay-section">
             <div class="modal-pay-row">
                 <label>Payment:</label>
-                <select id="modal-payment">
+                <select id="modal-payment" onchange="togglePaymentRef()">
                     <option value="Cash">Cash</option>
                     <option value="KNET">KNET</option>
+                    <option value="Talabat">Talabat</option>
+                    <option value="Keeta">Keeta</option>
                 </select>
+            </div>
+            <div class="modal-pay-row" id="modal-ref-row" style="display:none;">
+                <label>Reference:</label>
+                <input type="text" id="modal-ref" placeholder="Enter reference number">
             </div>
             <div class="modal-pay-row">
                 <label>Cash Paid:</label>
@@ -379,8 +385,22 @@ function updateModalChange() {
     }
 }
 
+function togglePaymentRef() {
+    var mode = document.getElementById('modal-payment').value;
+    var refRow = document.getElementById('modal-ref-row');
+    var refInput = document.getElementById('modal-ref');
+    
+    if (mode === 'KNET' || mode === 'Keeta' || mode === 'Talabat') {
+        refRow.style.display = 'flex';
+    } else {
+        refRow.style.display = 'none';
+        refInput.value = '';
+    }
+}
+
 function completePayment(printReceipt) {
     var paymentMode = document.getElementById('modal-payment').value;
+    var paymentRef = document.getElementById('modal-ref').value.trim();
     var cashVal = document.getElementById('modal-cash').value.trim();
     var cashPaid = cashVal === '' ? currentTotal : parseFloat(cashVal);
     if (isNaN(cashPaid)) cashPaid = currentTotal;
@@ -394,6 +414,7 @@ function completePayment(printReceipt) {
     var payload = {
         invoice_id: currentInvoiceId,
         payment_mode: paymentMode,
+        payment_reference: paymentRef,
         total: currentTotal,
         cash_paid: cashPaid,
         change_due: changeDue
@@ -410,6 +431,8 @@ function completePayment(printReceipt) {
                 if (res.success) {
                     showToast('Payment complete for ' + currentTableName + '!');
                     closeModal();
+                    document.getElementById('modal-ref').value = '';
+                    document.getElementById('modal-ref-row').style.display = 'none';
                     if (printReceipt) {
                         window.open('receipt.php?id=' + res.invoice_id, '_blank');
                     }

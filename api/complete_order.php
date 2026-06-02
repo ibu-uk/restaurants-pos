@@ -14,6 +14,7 @@ $data = json_decode(file_get_contents('php://input'), true);
 
 $invoice_id   = intval($data['invoice_id']);
 $payment_mode = $data['payment_mode'] ?? 'Cash';
+$payment_reference = $data['payment_reference'] ?? null;
 $total        = floatval($data['total']);
 $cash_paid    = floatval($data['cash_paid']);
 $change_due   = floatval($data['change_due']);
@@ -41,8 +42,8 @@ try {
     $table_id = $row['table_id'];
 
     // Mark invoice as paid
-    $stmt = $conn->prepare("UPDATE invoices SET status = 'paid', payment_mode = ?, total = ?, cash_paid = ?, change_due = ? WHERE id = ?");
-    $stmt->bind_param('sdddi', $payment_mode, $total, $cash_paid, $change_due, $invoice_id);
+    $stmt = $conn->prepare("UPDATE invoices SET status = 'paid', payment_mode = ?, payment_reference = ?, total = ?, cash_paid = ?, change_due = ? WHERE id = ?");
+    $stmt->bind_param('ssdddi', $payment_mode, $payment_reference, $total, $cash_paid, $change_due, $invoice_id);
     $stmt->execute();
     $stmt->close();
 

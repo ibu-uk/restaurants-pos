@@ -36,9 +36,10 @@ $conn->begin_transaction();
 try {
     // Insert invoice header
     $payment_mode = isset($data['payment_mode']) ? $data['payment_mode'] : 'Cash';
+    $payment_reference = isset($data['payment_reference']) ? $data['payment_reference'] : null;
     $status = 'paid';
-    $stmt = $conn->prepare("INSERT INTO invoices (invoice_number, user_id, user_name, table_id, table_name, payment_mode, status, total, cash_paid, change_due) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)");
-    $stmt->bind_param('sisiissddd', $invoice_number, $user_id, $user_name, $table_id, $table_name, $payment_mode, $status, $total, $cash_paid, $change_due);
+    $stmt = $conn->prepare("INSERT INTO invoices (invoice_number, user_id, user_name, table_id, table_name, payment_mode, payment_reference, status, total, cash_paid, change_due) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)");
+    $stmt->bind_param('sisissssddd', $invoice_number, $user_id, $user_name, $table_id, $table_name, $payment_mode, $payment_reference, $status, $total, $cash_paid, $change_due);
     $stmt->execute();
     $invoice_id = $conn->insert_id;
     $stmt->close();
