@@ -662,7 +662,7 @@ function saveOrder(printReceipt) {
                 if (res.success) {
                     showToast('Order saved!');
                     if (printReceipt) {
-                        window.open('receipt.php?id=' + res.invoice_id, '_blank');
+                        window.open('receipt.php?id=' + res.invoice_id + '&autoprint=1', '_blank');
                     }
                     // Clear order
                     orderItems = [];

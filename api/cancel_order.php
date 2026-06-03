@@ -28,6 +28,7 @@ try {
     $inv->close();
 
     if (!$row) {
+        $conn->rollback();
         echo json_encode(['error' => 'Order not found or already paid']);
         exit;
     }
@@ -35,14 +36,23 @@ try {
     $table_id = $row['table_id'];
 
     // Delete invoice items
-    $conn->query("DELETE FROM invoice_items WHERE invoice_id = $invoice_id");
+    $del1 = $conn->prepare("DELETE FROM invoice_items WHERE invoice_id = ?");
+    $del1->bind_param('i', $invoice_id);
+    $del1->execute();
+    $del1->close();
 
     // Delete invoice
-    $conn->query("DELETE FROM invoices WHERE id = $invoice_id AND status = 'open'");
+    $del2 = $conn->prepare("DELETE FROM invoices WHERE id = ? AND status = 'open'");
+    $del2->bind_param('i', $invoice_id);
+    $del2->execute();
+    $del2->close();
 
     // Free the table
     if ($table_id) {
-        $conn->query("UPDATE restaurant_tables SET status = 'available' WHERE id = $table_id");
+        $upd = $conn->prepare("UPDATE restaurant_tables SET status = 'available' WHERE id = ?");
+        $upd->bind_param('i', $table_id);
+        $upd->execute();
+        $upd->close();
     }
 
     $conn->commit();
@@ -52,4 +62,5 @@ try {
     $conn->rollback();
     echo json_encode(['error' => $e->getMessage()]);
 }
+$conn->close();
 ?>

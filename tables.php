@@ -99,6 +99,12 @@ html, body { min-height:100%; font-family:Tahoma,Arial,sans-serif; background:#f
 .change-info { font-size:13px; color:#27ae60; font-weight:bold; text-align:right; margin-top:4px; }
 .change-info.negative { color:#e74c3c; }
 
+.table-card.sub-table { border-style:dashed; opacity:0.92; }
+.table-card.sub-table .table-icon { font-size:26px; }
+.table-card.sub-table .table-name { font-size:14px; }
+.sub-table-label { font-size:10px; color:#8ab4f8; font-weight:600; margin-bottom:2px; }
+.mt-btn-seat { background:linear-gradient(135deg,#8ab4f8,#7aa0e8); color:#fff; font-size:11px; padding:5px 9px; white-space:nowrap; }
+
 #toast {
     position:fixed; bottom:20px; left:50%; transform:translateX(-50%) translateY(60px);
     background:#27ae60; color:#fff; padding:10px 24px; border-radius:8px;
@@ -301,6 +307,15 @@ function loadTables() {
 }
 
 var tablesCache = [];
+
+function isSubTable(name) {
+    return /^.+ [A-Z]$/.test(name.trim());
+}
+
+function getParentName(name) {
+    return name.trim().replace(/ [A-Z]$/, '');
+}
+
 function renderTables(tables) {
     tablesCache = tables;
     var grid = document.getElementById('tables-grid');
@@ -312,9 +327,14 @@ function renderTables(tables) {
     for (var i = 0; i < tables.length; i++) {
         var t = tables[i];
         var isOccupied = t.status === 'occupied';
+        var isSub = isSubTable(t.name);
         var icon = isOccupied ? '🔴' : '🟢';
-        html += '<div class="table-card ' + t.status + '" onclick="' + (isOccupied ? 'openTableOrder(' + t.id + ', \'' + t.name.replace(/'/g, '') + '\')' : 'showToast(\'Table is available\')') + '">';
-        html += '<span class="table-icon">' + (t.name.toLowerCase().includes('takeaway') ? '🥡' : t.name.toLowerCase().includes('delivery') ? '🛵' : '🍽️') + '</span>';
+        var emoji = t.name.toLowerCase().includes('takeaway') ? '🥡' : t.name.toLowerCase().includes('delivery') ? '🛵' : (isSub ? '🪑' : '🍽️');
+        html += '<div class="table-card ' + t.status + (isSub ? ' sub-table' : '') + '" onclick="' + (isOccupied ? 'openTableOrder(' + t.id + ', \'' + t.name.replace(/'/g, '') + '\')' : 'showToast(\'Table is available\')') + '">';
+        if (isSub) {
+            html += '<div class="sub-table-label">↳ ' + getParentName(t.name) + ' Seat</div>';
+        }
+        html += '<span class="table-icon">' + emoji + '</span>';
         html += '<div class="table-name">' + t.name + '</div>';
         html += '<div><span class="table-badge ' + t.status + '">' + icon + ' ' + (isOccupied ? 'Occupied' : 'Available') + '</span></div>';
         if (isOccupied) {
@@ -434,7 +454,7 @@ function completePayment(printReceipt) {
                     document.getElementById('modal-ref').value = '';
                     document.getElementById('modal-ref-row').style.display = 'none';
                     if (printReceipt) {
-                        window.open('receipt.php?id=' + res.invoice_id, '_blank');
+                        window.open('receipt.php?id=' + res.invoice_id + '&autoprint=1', '_blank');
                     }
                     loadTables();
                 } else {
@@ -517,14 +537,49 @@ function renderManageList() {
     var html = '';
     for (var i = 0; i < tablesCache.length; i++) {
         var t = tablesCache[i];
+        var isSub = isSubTable(t.name);
         html += '<div class="mt-row">';
         html += '<input type="text" value="' + esc(t.name) + '" id="mt-name-' + t.id + '">';
         html += '<span class="mt-status ' + t.status + '">' + t.status + '</span>';
-        html += '<button class="mt-btn mt-btn-save" onclick="renameTable(' + t.id + ')">&#10003; Save</button>';
-        html += '<button class="mt-btn mt-btn-del" onclick="deleteTable(' + t.id + ', \'' + esc(t.name) + '\')">&#128465; Delete</button>';
+        html += '<button class="mt-btn mt-btn-save" onclick="renameTable(' + t.id + ')">&#10003;</button>';
+        if (!isSub) {
+            html += '<button class="mt-btn mt-btn-seat" title="Add a seat/sub-table" onclick="addSubTable(\'' + esc(t.name) + '\')">&#43; Seat</button>';
+        }
+        html += '<button class="mt-btn mt-btn-del" onclick="deleteTable(' + t.id + ', \'' + esc(t.name) + '\')">&#128465;</button>';
         html += '</div>';
     }
     list.innerHTML = html;
+}
+
+function addSubTable(parentName) {
+    var letters = 'ABCDEFGHIJKLMNOPQRSTUVWXYZ';
+    var existingNames = tablesCache.map(function(t) { return t.name; });
+    var nextName = null;
+    for (var i = 0; i < letters.length; i++) {
+        var candidate = parentName + ' ' + letters[i];
+        if (existingNames.indexOf(candidate) === -1) {
+            nextName = candidate;
+            break;
+        }
+    }
+    if (!nextName) { showToast('Maximum seats reached for ' + parentName, true); return; }
+    var xhr = new XMLHttpRequest();
+    xhr.open('POST', 'api/manage_tables.php', true);
+    xhr.setRequestHeader('Content-Type', 'application/json');
+    xhr.onreadystatechange = function() {
+        if (xhr.readyState === 4) {
+            try {
+                var res = JSON.parse(xhr.responseText);
+                if (res.success) {
+                    showToast('Seat "' + nextName + '" added');
+                    loadTables();
+                } else {
+                    showToast(res.error || 'Failed to add seat', true);
+                }
+            } catch(e) { showToast('Server error', true); }
+        }
+    };
+    xhr.send(JSON.stringify({action: 'add_table', name: nextName}));
 }
 
 function addTable() {

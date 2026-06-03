@@ -35,6 +35,7 @@ try {
     $inv->close();
 
     if (!$row) {
+        $conn->rollback();
         echo json_encode(['error' => 'Order not found or already paid']);
         exit;
     }
@@ -48,7 +49,12 @@ try {
     $stmt->close();
 
     // Free the table
-    $conn->query("UPDATE restaurant_tables SET status = 'available' WHERE id = $table_id");
+    if ($table_id) {
+        $upd = $conn->prepare("UPDATE restaurant_tables SET status = 'available' WHERE id = ?");
+        $upd->bind_param('i', $table_id);
+        $upd->execute();
+        $upd->close();
+    }
 
     $conn->commit();
     echo json_encode(['success' => true, 'invoice_id' => $invoice_id]);
@@ -57,4 +63,5 @@ try {
     $conn->rollback();
     echo json_encode(['error' => $e->getMessage()]);
 }
+$conn->close();
 ?>

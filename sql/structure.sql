@@ -80,6 +80,7 @@ CREATE TABLE IF NOT EXISTS invoices (
     table_name VARCHAR(50) DEFAULT NULL,
     status ENUM('open','paid') DEFAULT 'paid',
     payment_mode VARCHAR(20) NOT NULL DEFAULT 'Cash',
+    payment_reference VARCHAR(100) DEFAULT NULL,
     total DECIMAL(10,3) NOT NULL,
     cash_paid DECIMAL(10,3) NOT NULL,
     change_due DECIMAL(10,3) NOT NULL,
@@ -125,6 +126,7 @@ CREATE INDEX idx_invoices_created_at  ON invoices (created_at);
 CREATE INDEX idx_invoices_user_id     ON invoices (user_id);
 CREATE INDEX idx_invoices_payment     ON invoices (payment_mode);
 CREATE INDEX idx_invoices_status      ON invoices (status);
+CREATE INDEX idx_invoices_table_id    ON invoices (table_id);
 CREATE INDEX idx_invoice_items_inv_id ON invoice_items (invoice_id);
 CREATE INDEX idx_items_category       ON items (category_id);
 CREATE INDEX idx_items_active         ON items (is_active);

@@ -46,7 +46,10 @@ try {
 
     // If this was a table order, free the table
     if ($table_id) {
-        $conn->query("UPDATE restaurant_tables SET status = 'available' WHERE id = $table_id");
+        $upd = $conn->prepare("UPDATE restaurant_tables SET status = 'available' WHERE id = ?");
+        $upd->bind_param('i', $table_id);
+        $upd->execute();
+        $upd->close();
     }
 
     // Insert invoice items
