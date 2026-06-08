@@ -326,17 +326,19 @@ function renderTables(tables) {
     var html = '';
     for (var i = 0; i < tables.length; i++) {
         var t = tables[i];
-        var isOccupied = t.status === 'occupied';
+        // Source of truth = real open invoice count, not the status column (avoids drift).
+        var isOccupied = parseInt(t.open_orders) > 0;
+        var statusClass = isOccupied ? 'occupied' : 'available';
         var isSub = isSubTable(t.name);
         var icon = isOccupied ? '🔴' : '🟢';
         var emoji = t.name.toLowerCase().includes('takeaway') ? '🥡' : t.name.toLowerCase().includes('delivery') ? '🛵' : (isSub ? '🪑' : '🍽️');
-        html += '<div class="table-card ' + t.status + (isSub ? ' sub-table' : '') + '" onclick="' + (isOccupied ? 'openTableOrder(' + t.id + ', \'' + t.name.replace(/'/g, '') + '\')' : 'showToast(\'Table is available\')') + '">';
+        html += '<div class="table-card ' + statusClass + (isSub ? ' sub-table' : '') + '" onclick="' + (isOccupied ? 'openTableOrder(' + t.id + ', \'' + t.name.replace(/'/g, '') + '\')' : 'showToast(\'Table is available\')') + '">';
         if (isSub) {
             html += '<div class="sub-table-label">↳ ' + getParentName(t.name) + ' Seat</div>';
         }
         html += '<span class="table-icon">' + emoji + '</span>';
         html += '<div class="table-name">' + t.name + '</div>';
-        html += '<div><span class="table-badge ' + t.status + '">' + icon + ' ' + (isOccupied ? 'Occupied' : 'Available') + '</span></div>';
+        html += '<div><span class="table-badge ' + statusClass + '">' + icon + ' ' + (isOccupied ? 'Occupied' : 'Available') + '</span></div>';
         if (isOccupied) {
             html += '<div class="table-items-count">Click to view order</div>';
         }
@@ -538,9 +540,10 @@ function renderManageList() {
     for (var i = 0; i < tablesCache.length; i++) {
         var t = tablesCache[i];
         var isSub = isSubTable(t.name);
+        var mtStatus = parseInt(t.open_orders) > 0 ? 'occupied' : 'available';
         html += '<div class="mt-row">';
         html += '<input type="text" value="' + esc(t.name) + '" id="mt-name-' + t.id + '">';
-        html += '<span class="mt-status ' + t.status + '">' + t.status + '</span>';
+        html += '<span class="mt-status ' + mtStatus + '">' + mtStatus + '</span>';
         html += '<button class="mt-btn mt-btn-save" onclick="renameTable(' + t.id + ')">&#10003;</button>';
         if (!isSub) {
             html += '<button class="mt-btn mt-btn-seat" title="Add a seat/sub-table" onclick="addSubTable(\'' + esc(t.name) + '\')">&#43; Seat</button>';
