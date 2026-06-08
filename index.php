@@ -795,6 +795,9 @@ document.getElementById('table-select').addEventListener('change', function() {
                     badge.textContent = 'Open order loaded';
                     showToast('Loaded open order for ' + document.getElementById('table-select').options[document.getElementById('table-select').selectedIndex].getAttribute('data-name'));
                 } else {
+                    // No open order for this table - start a fresh empty cart
+                    orderItems = [];
+                    renderOrder();
                     badge.style.display = 'none';
                 }
             } catch(e) {}

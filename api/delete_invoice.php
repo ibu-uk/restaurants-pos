@@ -17,12 +17,22 @@ if ($id <= 0) {
     exit;
 }
 
-$conn->query("DELETE FROM invoice_items WHERE invoice_id = $id");
-$conn->query("DELETE FROM invoices WHERE id = $id");
+$conn->begin_transaction();
+try {
+    $d1 = $conn->prepare("DELETE FROM invoice_items WHERE invoice_id = ?");
+    $d1->bind_param('i', $id);
+    $d1->execute();
+    $d1->close();
 
-if ($conn->affected_rows >= 0) {
+    $d2 = $conn->prepare("DELETE FROM invoices WHERE id = ?");
+    $d2->bind_param('i', $id);
+    $d2->execute();
+    $d2->close();
+
+    $conn->commit();
     echo json_encode(['success' => true]);
-} else {
+} catch (Exception $e) {
+    $conn->rollback();
     echo json_encode(['error' => 'Delete failed']);
 }
 $conn->close();

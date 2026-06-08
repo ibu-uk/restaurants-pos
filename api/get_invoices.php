@@ -8,7 +8,8 @@ require_once '../auth.php';
 require_api_login();
 
 $page  = isset($_GET['page']) ? max(1, intval($_GET['page'])) : 1;
-$limit = 50;
+// Allow caller to request a larger page size (e.g. report export), capped at 10000 for safety.
+$limit = isset($_GET['per_page']) ? min(10000, max(1, intval($_GET['per_page']))) : 50;
 $offset = ($page - 1) * $limit;
 
 $where = [];

@@ -34,15 +34,43 @@ $invoice_number = 'INV-' . date('Ymd') . '-' . strtoupper(substr(uniqid(), -4));
 $conn->begin_transaction();
 
 try {
-    // Insert invoice header
     $payment_mode = isset($data['payment_mode']) ? $data['payment_mode'] : 'Cash';
     $payment_reference = isset($data['payment_reference']) ? $data['payment_reference'] : null;
     $status = 'paid';
-    $stmt = $conn->prepare("INSERT INTO invoices (invoice_number, user_id, user_name, table_id, table_name, payment_mode, payment_reference, status, total, cash_paid, change_due) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)");
-    $stmt->bind_param('sisissssddd', $invoice_number, $user_id, $user_name, $table_id, $table_name, $payment_mode, $payment_reference, $status, $total, $cash_paid, $change_due);
-    $stmt->execute();
-    $invoice_id = $conn->insert_id;
-    $stmt->close();
+
+    // If this is a table order, check for an existing OPEN (held) order for that table.
+    // If found, convert that invoice to paid instead of creating a duplicate.
+    $invoice_id = null;
+    if ($table_id) {
+        $chk = $conn->prepare("SELECT id FROM invoices WHERE table_id = ? AND status = 'open' LIMIT 1");
+        $chk->bind_param('i', $table_id);
+        $chk->execute();
+        $open = $chk->get_result()->fetch_assoc();
+        $chk->close();
+        if ($open) {
+            $invoice_id = intval($open['id']);
+        }
+    }
+
+    if ($invoice_id) {
+        // Update the existing open invoice -> paid, and replace its items
+        $upd = $conn->prepare("UPDATE invoices SET payment_mode = ?, payment_reference = ?, status = 'paid', total = ?, cash_paid = ?, change_due = ? WHERE id = ?");
+        $upd->bind_param('ssdddi', $payment_mode, $payment_reference, $total, $cash_paid, $change_due, $invoice_id);
+        $upd->execute();
+        $upd->close();
+
+        $delItems = $conn->prepare("DELETE FROM invoice_items WHERE invoice_id = ?");
+        $delItems->bind_param('i', $invoice_id);
+        $delItems->execute();
+        $delItems->close();
+    } else {
+        // Insert a brand new paid invoice
+        $stmt = $conn->prepare("INSERT INTO invoices (invoice_number, user_id, user_name, table_id, table_name, payment_mode, payment_reference, status, total, cash_paid, change_due) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)");
+        $stmt->bind_param('sisissssddd', $invoice_number, $user_id, $user_name, $table_id, $table_name, $payment_mode, $payment_reference, $status, $total, $cash_paid, $change_due);
+        $stmt->execute();
+        $invoice_id = $conn->insert_id;
+        $stmt->close();
+    }
 
     // If this was a table order, free the table
     if ($table_id) {

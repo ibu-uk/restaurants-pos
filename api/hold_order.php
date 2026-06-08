@@ -42,7 +42,10 @@ try {
         $upd->execute();
         $upd->close();
 
-        $conn->query("DELETE FROM invoice_items WHERE invoice_id = $invoice_id");
+        $delOld = $conn->prepare("DELETE FROM invoice_items WHERE invoice_id = ?");
+        $delOld->bind_param('i', $invoice_id);
+        $delOld->execute();
+        $delOld->close();
     } else {
         // Create new open invoice
         $invoice_number = 'TBL-' . $table_id . '-' . date('Ymd') . '-' . strtoupper(substr(uniqid(), -4));
@@ -73,7 +76,10 @@ try {
     $stmt2->close();
 
     // Mark table as occupied
-    $conn->query("UPDATE restaurant_tables SET status = 'occupied' WHERE id = $table_id");
+    $occ = $conn->prepare("UPDATE restaurant_tables SET status = 'occupied' WHERE id = ?");
+    $occ->bind_param('i', $table_id);
+    $occ->execute();
+    $occ->close();
 
     $conn->commit();
     echo json_encode(['success' => true, 'invoice_id' => $invoice_id]);
@@ -82,4 +88,5 @@ try {
     $conn->rollback();
     echo json_encode(['error' => $e->getMessage()]);
 }
+$conn->close();
 ?>
