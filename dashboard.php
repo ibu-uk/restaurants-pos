@@ -21,6 +21,22 @@ $cash_summary  = $conn->query("SELECT COUNT(*) as invoice_count, COALESCE(SUM(to
 $knet_summary  = $conn->query("SELECT COUNT(*) as invoice_count, COALESCE(SUM(total), 0) as total_sales FROM invoices WHERE $whereToday AND payment_mode = 'KNET' $whereUser")->fetch_assoc();
 $user_summary  = $conn->query("SELECT COALESCE(user_name, 'Unknown') as user_name, COUNT(*) as invoice_count, COALESCE(SUM(total), 0) as total_sales FROM invoices WHERE $whereToday $whereUser GROUP BY user_id, user_name ORDER BY total_sales DESC");
 $latest        = $conn->query("SELECT * FROM invoices WHERE $whereToday $whereUser ORDER BY created_at DESC LIMIT 10");
+
+// Daily sales summary (per date breakdown by payment mode) for the selected range
+$daily_summary_res = $conn->query("SELECT DATE(created_at) as sale_date,
+        COUNT(*) as invoice_count,
+        COALESCE(SUM(total), 0) as total_sales,
+        COALESCE(SUM(CASE WHEN payment_mode = 'Cash'    THEN total ELSE 0 END), 0) as cash_total,
+        COALESCE(SUM(CASE WHEN payment_mode = 'KNET'    THEN total ELSE 0 END), 0) as knet_total,
+        COALESCE(SUM(CASE WHEN payment_mode = 'Talabat' THEN total ELSE 0 END), 0) as talabat_total,
+        COALESCE(SUM(CASE WHEN payment_mode = 'Keeta'   THEN total ELSE 0 END), 0) as keeta_total
+    FROM invoices WHERE $whereToday $whereUser
+    GROUP BY DATE(created_at)
+    ORDER BY sale_date DESC");
+$daily_summary_arr = [];
+if ($daily_summary_res) {
+    while ($r = $daily_summary_res->fetch_assoc()) { $daily_summary_arr[] = $r; }
+}
 // Optional item filter
 $itemFilter = isset($_GET['item']) ? trim($_GET['item']) : '';
 $itemFilterSql = '';
@@ -141,6 +157,60 @@ td { padding:10px 12px; border-bottom:1px solid #e9ecef; font-size:13px; }
     <div class="card cash"><div class="label">Cash Sale</div><div class="value"><?php echo number_format($cash_summary['total_sales'], 3); ?> KD</div></div>
     <div class="card knet"><div class="label">KNET Sale</div><div class="value"><?php echo number_format($knet_summary['total_sales'], 3); ?> KD</div></div>
   </div>
+  <!-- DAILY SALES SUMMARY REPORT (Print / PDF / Excel) -->
+  <div class="section" style="margin-bottom:22px;">
+    <div style="display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:8px;">
+      <div class="section-title" style="margin:0;">&#128202; Daily Sales Summary <?php echo $isToday ? 'Today' : 'in Period'; ?></div>
+      <?php if (count($daily_summary_arr) > 0): ?>
+      <div style="display:flex;gap:8px;padding-right:10px;">
+        <button onclick="printDailyReport()" style="padding:7px 14px;background:linear-gradient(135deg,#8ab4f8,#7aa0e8);color:#fff;border:none;border-radius:6px;font-size:12px;font-weight:bold;cursor:pointer;">&#128424; Print</button>
+        <button onclick="exportDailyPDF()" style="padding:7px 14px;background:linear-gradient(135deg,#e74c3c,#c0392b);color:#fff;border:none;border-radius:6px;font-size:12px;font-weight:bold;cursor:pointer;">&#128196; PDF</button>
+        <button onclick="exportDailyExcel()" style="padding:7px 14px;background:linear-gradient(135deg,#27ae60,#1e8449);color:#fff;border:none;border-radius:6px;font-size:12px;font-weight:bold;cursor:pointer;">&#128202; Excel</button>
+      </div>
+      <?php endif; ?>
+    </div>
+    <?php if (count($daily_summary_arr) > 0): ?>
+    <table id="daily-summary-table">
+      <thead><tr><th>Date</th><th>Invoices</th><th>Cash</th><th>KNET</th><th>Talabat</th><th>Keeta</th><th>Total Sale</th></tr></thead>
+      <tbody>
+      <?php
+        $sum_inv = 0; $sum_cash = 0; $sum_knet = 0; $sum_tal = 0; $sum_keeta = 0; $sum_total = 0;
+        foreach ($daily_summary_arr as $d):
+          $sum_inv   += intval($d['invoice_count']);
+          $sum_cash  += floatval($d['cash_total']);
+          $sum_knet  += floatval($d['knet_total']);
+          $sum_tal   += floatval($d['talabat_total']);
+          $sum_keeta += floatval($d['keeta_total']);
+          $sum_total += floatval($d['total_sales']);
+      ?>
+        <tr>
+          <td><?php echo htmlspecialchars(date('d/m/Y', strtotime($d['sale_date']))); ?></td>
+          <td><?php echo intval($d['invoice_count']); ?></td>
+          <td><?php echo number_format($d['cash_total'], 3); ?></td>
+          <td><?php echo number_format($d['knet_total'], 3); ?></td>
+          <td><?php echo number_format($d['talabat_total'], 3); ?></td>
+          <td><?php echo number_format($d['keeta_total'], 3); ?></td>
+          <td class="amount"><?php echo number_format($d['total_sales'], 3); ?> KD</td>
+        </tr>
+      <?php endforeach; ?>
+      </tbody>
+      <tfoot>
+        <tr style="font-weight:bold;background:#f8f9fa;">
+          <td>TOTAL</td>
+          <td><?php echo $sum_inv; ?></td>
+          <td><?php echo number_format($sum_cash, 3); ?></td>
+          <td><?php echo number_format($sum_knet, 3); ?></td>
+          <td><?php echo number_format($sum_tal, 3); ?></td>
+          <td><?php echo number_format($sum_keeta, 3); ?></td>
+          <td class="amount"><?php echo number_format($sum_total, 3); ?> KD</td>
+        </tr>
+      </tfoot>
+    </table>
+    <?php else: ?>
+    <div class="empty">No sales in the selected period.</div>
+    <?php endif; ?>
+  </div>
+
   <div class="section">
     <div class="section-title"><?php echo $periodLabel; ?> Sales By User</div>
     <?php if ($user_summary && $user_summary->num_rows > 0): ?>
@@ -307,6 +377,69 @@ function exportItemsExcel() {
     var link = document.createElement('a');
     link.href = URL.createObjectURL(blob);
     link.download = 'items_sold_<?php echo $fromDate; ?>_to_<?php echo $toDate; ?>.csv';
+    link.click();
+}
+
+/* ===== DAILY SALES SUMMARY REPORT (Date / Cash / KNET / Talabat / Keeta / Total) ===== */
+var DAILY_TITLE = 'Daily Sales Summary Report';
+
+function buildDailyReportHTML() {
+    var table = document.getElementById('daily-summary-table');
+    if (!table) return '';
+    var html = '';
+    html += '<div style="text-align:center;margin-bottom:10px;">';
+    html += '<h2 style="margin:0;">' + COMPANY_NAME + '</h2>';
+    html += '<div style="direction:rtl;color:#555;">' + COMPANY_NAME_AR + '</div>';
+    html += '<h3 style="margin:8px 0 2px;">' + DAILY_TITLE + '</h3>';
+    html += '<div style="color:#555;font-size:13px;">Period: ' + PERIOD_TEXT + '</div>';
+    html += '</div>';
+    html += '<table style="width:100%;border-collapse:collapse;font-size:13px;">' + table.innerHTML + '</table>';
+    return html;
+}
+
+function printDailyReport() {
+    var w = window.open('', '_blank');
+    w.document.write('<html><head><title>' + DAILY_TITLE + '</title>');
+    w.document.write('<style>body{font-family:Tahoma,Arial,sans-serif;padding:20px;}table{width:100%;border-collapse:collapse;}th,td{border:1px solid #ccc;padding:8px 10px;text-align:left;}thead th{background:#f0f0f0;}tfoot td{background:#f8f8f8;font-weight:bold;}</style>');
+    w.document.write('</head><body>');
+    w.document.write(buildDailyReportHTML());
+    w.document.write('</body></html>');
+    w.document.close();
+    w.focus();
+    setTimeout(function(){ w.print(); }, 300);
+}
+
+function exportDailyPDF() {
+    // Same as print - user chooses "Save as PDF" in the print dialog
+    printDailyReport();
+}
+
+function exportDailyExcel() {
+    var table = document.getElementById('daily-summary-table');
+    if (!table) return;
+    var csv = 'Date,Invoices,Cash (KD),KNET (KD),Talabat (KD),Keeta (KD),Total Sale (KD)\n';
+    var rows = table.querySelectorAll('tbody tr');
+    for (var i = 0; i < rows.length; i++) {
+        var c = rows[i].querySelectorAll('td');
+        csv += c[0].textContent.trim() + ',' +
+               c[1].textContent.trim() + ',' +
+               c[2].textContent.trim() + ',' +
+               c[3].textContent.trim() + ',' +
+               c[4].textContent.trim() + ',' +
+               c[5].textContent.trim() + ',' +
+               c[6].textContent.replace(' KD', '').trim() + '\n';
+    }
+    var foot = table.querySelector('tfoot tr');
+    if (foot) {
+        var fc = foot.querySelectorAll('td');
+        csv += 'TOTAL,' + fc[1].textContent.trim() + ',' + fc[2].textContent.trim() + ',' +
+               fc[3].textContent.trim() + ',' + fc[4].textContent.trim() + ',' +
+               fc[5].textContent.trim() + ',' + fc[6].textContent.replace(' KD', '').trim() + '\n';
+    }
+    var blob = new Blob([csv], { type: 'text/csv;charset=utf-8;' });
+    var link = document.createElement('a');
+    link.href = URL.createObjectURL(blob);
+    link.download = 'daily_sales_<?php echo $fromDate; ?>_to_<?php echo $toDate; ?>.csv';
     link.click();
 }
 </script>
