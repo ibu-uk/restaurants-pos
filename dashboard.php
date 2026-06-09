@@ -162,8 +162,9 @@ td { padding:10px 12px; border-bottom:1px solid #e9ecef; font-size:13px; }
     <div style="display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:8px;">
       <div class="section-title" style="margin:0;">&#128202; Daily Sales Summary <?php echo $isToday ? 'Today' : 'in Period'; ?></div>
       <?php if (count($daily_summary_arr) > 0): ?>
-      <div style="display:flex;gap:8px;padding-right:10px;">
-        <button onclick="printDailyReport()" style="padding:7px 14px;background:linear-gradient(135deg,#8ab4f8,#7aa0e8);color:#fff;border:none;border-radius:6px;font-size:12px;font-weight:bold;cursor:pointer;">&#128424; Print</button>
+      <div style="display:flex;gap:8px;padding-right:10px;flex-wrap:wrap;">
+        <button onclick="printDailyReport()" style="padding:7px 14px;background:linear-gradient(135deg,#8ab4f8,#7aa0e8);color:#fff;border:none;border-radius:6px;font-size:12px;font-weight:bold;cursor:pointer;">&#128424; Print (A4)</button>
+        <button onclick="printDailyThermal()" style="padding:7px 14px;background:linear-gradient(135deg,#34495e,#2c3e50);color:#fff;border:none;border-radius:6px;font-size:12px;font-weight:bold;cursor:pointer;">&#129534; Print (80mm)</button>
         <button onclick="exportDailyPDF()" style="padding:7px 14px;background:linear-gradient(135deg,#e74c3c,#c0392b);color:#fff;border:none;border-radius:6px;font-size:12px;font-weight:bold;cursor:pointer;">&#128196; PDF</button>
         <button onclick="exportDailyExcel()" style="padding:7px 14px;background:linear-gradient(135deg,#27ae60,#1e8449);color:#fff;border:none;border-radius:6px;font-size:12px;font-weight:bold;cursor:pointer;">&#128202; Excel</button>
       </div>
@@ -323,6 +324,8 @@ var REPORT_TITLE = <?php echo json_encode($itemFilter !== '' ? ('"' . $itemFilte
 var COMPANY_NAME = <?php echo json_encode($company['company_name_en']); ?>;
 var COMPANY_NAME_AR = <?php echo json_encode($company['company_name_ar']); ?>;
 var PERIOD_TEXT = <?php echo json_encode($isToday ? ('Today (' . date('d/m/Y') . ')') : (date('d/m/Y', strtotime($fromDate)) . ' to ' . date('d/m/Y', strtotime($toDate)))); ?>;
+var COMPANY_PHONE = <?php echo json_encode($company['phone'] ?? ''); ?>;
+var PRINTED_AT = <?php echo json_encode(date('d/m/Y H:i')); ?>;
 
 function buildReportHTML() {
     var table = document.getElementById('items-sold-table');
@@ -441,6 +444,79 @@ function exportDailyExcel() {
     link.href = URL.createObjectURL(blob);
     link.download = 'daily_sales_<?php echo $fromDate; ?>_to_<?php echo $toDate; ?>.csv';
     link.click();
+}
+
+/* ===== THERMAL (80mm) PRINT for Daily Sales Summary ===== */
+function printDailyThermal() {
+    var table = document.getElementById('daily-summary-table');
+    if (!table) return;
+
+    function line(label, value, bold) {
+        return '<div class="t-row' + (bold ? ' bold' : '') + '"><span>' + label + '</span><span>' + value + '</span></div>';
+    }
+
+    var body = '';
+    var rows = table.querySelectorAll('tbody tr');
+    for (var i = 0; i < rows.length; i++) {
+        var c = rows[i].querySelectorAll('td');
+        body += '<div class="day-block">';
+        body += '<div class="day-date">' + c[0].textContent.trim() + '</div>';
+        body += line('Invoices', c[1].textContent.trim(), false);
+        body += line('Cash', c[2].textContent.trim(), false);
+        body += line('KNET', c[3].textContent.trim(), false);
+        body += line('Talabat', c[4].textContent.trim(), false);
+        body += line('Keeta', c[5].textContent.trim(), false);
+        body += line('Total', c[6].textContent.replace('KD', '').trim() + ' KD', true);
+        body += '</div>';
+    }
+
+    var grand = '';
+    var foot = table.querySelector('tfoot tr');
+    if (foot) {
+        var fc = foot.querySelectorAll('td');
+        grand += '<div class="grand-block">';
+        grand += '<div class="day-date">GRAND TOTAL</div>';
+        grand += line('Invoices', fc[1].textContent.trim(), false);
+        grand += line('Cash', fc[2].textContent.trim(), false);
+        grand += line('KNET', fc[3].textContent.trim(), false);
+        grand += line('Talabat', fc[4].textContent.trim(), false);
+        grand += line('Keeta', fc[5].textContent.trim(), false);
+        grand += line('TOTAL', fc[6].textContent.replace('KD', '').trim() + ' KD', true);
+        grand += '</div>';
+    }
+
+    var w = window.open('', '_blank');
+    w.document.write('<html><head><title>Daily Sales Summary</title>');
+    w.document.write('<style>'
+        + '@page { size:80mm auto; margin:0; }'
+        + '* { margin:0; padding:0; box-sizing:border-box; }'
+        + 'body { width:80mm; font-family:"Courier New",Courier,monospace; color:#000; padding:4mm 3mm; }'
+        + '.header { text-align:center; border-bottom:2px dashed #000; padding-bottom:6px; margin-bottom:6px; }'
+        + '.header .name { font-size:15px; font-weight:bold; }'
+        + '.header .name-ar { font-size:13px; direction:rtl; font-weight:bold; }'
+        + '.header .sub { font-size:11px; margin-top:3px; }'
+        + '.title { text-align:center; font-size:13px; font-weight:bold; margin:6px 0 2px; }'
+        + '.period { text-align:center; font-size:11px; margin-bottom:8px; }'
+        + '.day-block { border-bottom:1px dashed #999; padding:4px 0 6px; margin-bottom:4px; }'
+        + '.grand-block { border-top:2px dashed #000; padding-top:6px; margin-top:4px; }'
+        + '.day-date { font-size:12px; font-weight:bold; margin-bottom:3px; }'
+        + '.t-row { display:flex; justify-content:space-between; font-size:12px; padding:2px 0; }'
+        + '.t-row.bold { font-weight:bold; font-size:13px; }'
+        + '.footer { text-align:center; border-top:2px dashed #000; margin-top:8px; padding-top:6px; font-size:10px; }'
+        + '</style>');
+    w.document.write('</head><body>');
+    w.document.write('<div class="header"><div class="name">' + COMPANY_NAME + '</div>'
+        + '<div class="name-ar">' + COMPANY_NAME_AR + '</div>'
+        + (COMPANY_PHONE ? '<div class="sub">Tel: ' + COMPANY_PHONE + '</div>' : '') + '</div>');
+    w.document.write('<div class="title">Daily Sales Summary</div>');
+    w.document.write('<div class="period">' + PERIOD_TEXT + '</div>');
+    w.document.write(body);
+    w.document.write(grand);
+    w.document.write('<div class="footer">Printed: ' + PRINTED_AT + '</div>');
+    w.document.write('</body></html>');
+    w.document.close();
+    w.focus();
+    setTimeout(function(){ w.print(); }, 300);
 }
 </script>
 </body>
