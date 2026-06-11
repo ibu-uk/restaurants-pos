@@ -40,36 +40,33 @@ html, body { height:100%; font-family: Tahoma, Arial, sans-serif; background:#f5
 #main { display:flex; flex:1; overflow:hidden; }
 
 /* ===== LEFT: MENU PANEL ===== */
-#menu-panel { flex:1; display:flex; flex-direction:row; overflow:hidden; border-right:1px solid #e1e4e8; background:#fff; }
+#menu-panel { flex:1; display:flex; flex-direction:column; overflow:hidden; border-right:1px solid #e1e4e8; background:#fff; }
 
-/* Category Sidebar */
+/* Category Tabs */
 #cat-tabs {
-    display:flex; flex-direction:column; gap:3px; padding:5px;
-    background:#e9ecef; border-right:1px solid #dee2e6; flex-shrink:0;
-    width:110px; overflow-y:auto; align-items:center;
+    display:flex; flex-wrap:wrap; gap:4px; padding:5px 6px;
+    background:#e9ecef; border-bottom:1px solid #dee2e6; flex-shrink:0;
+    max-height:95px; overflow:hidden; align-content:flex-start;
 }
-#cat-tabs::-webkit-scrollbar { width:6px; }
-#cat-tabs::-webkit-scrollbar-thumb { background:#bdc3c7; border-radius:3px; }
-#cat-tabs::-webkit-scrollbar-track { background:#e9ecef; }
 .cat-tab {
-    width:100% !important; height:60px !important; padding:5px !important; background:#fff; color:#495057;
-    border:1px solid #dee2e6 !important; cursor:pointer; border-radius:6px; font-size:11px;
+    width:125px !important; height:42px !important; padding:6px 8px !important; background:#fff; color:#495057;
+    border:1px solid #dee2e6 !important; cursor:pointer; border-radius:6px; font-size:12px;
     font-family:Tahoma,Arial,sans-serif; font-weight:bold;
     transition:all 0.15s; border:2px solid transparent;
-    display:flex; flex-direction:column; align-items:center; justify-content:center; gap:3px;
-    touch-action:manipulation; flex-shrink:0; box-sizing:border-box; text-align:center;
+    display:flex; align-items:center; justify-content:center; gap:5px;
+    touch-action:manipulation; flex-shrink:0; box-sizing:border-box;
 }
-.cat-tab small { font-size:9px !important; }
+.cat-tab small { font-size:11px !important; }
 .cat-tab:hover { background:#f8f9fa; color:#3498db; border-color:#3498db; }
 .cat-tab.active { background:#3498db; color:#fff; border-color:#2980b9; }
-.cat-tab-img { width:32px; height:32px; object-fit:cover; border-radius:5px; flex-shrink:0; }
+.cat-tab-img { width:28px; height:28px; object-fit:cover; border-radius:5px; flex-shrink:0; }
 .cat-tab-text { display:block; }
-.cat-tab .cat-tab-img { width:32px; height:32px; border-radius:5px; }
+.cat-tab .cat-tab-img { width:28px; height:28px; border-radius:5px; }
 
 /* Item Grid */
 #items-grid {
     flex:1; overflow-y:auto; padding:10px;
-    display:grid; grid-template-columns: repeat(auto-fill, minmax(130px, 1fr)); gap:7px;
+    display:grid; grid-template-columns: repeat(auto-fill, minmax(135px, 1fr)); gap:7px;
     background:#f5f7fa; align-content:start;
 }
 .item-btn {
