@@ -39,34 +39,37 @@ html, body { height:100%; font-family: Tahoma, Arial, sans-serif; background:#f5
 /* ===== MAIN CONTENT ===== */
 #main { display:flex; flex:1; overflow:hidden; }
 
-/* ===== LEFT: MENU PANEL ===== */
-#menu-panel { flex:1; display:flex; flex-direction:column; overflow:hidden; border-right:1px solid #e1e4e8; background:#fff; }
+/* ===== LEFT: MENU PANEL (OLD SIDEBAR LAYOUT) ===== */
+#menu-panel { flex:1; display:flex; flex-direction:row; overflow:hidden; border-right:1px solid #e1e4e8; background:#fff; }
 
-/* Category Tabs */
+/* Category Sidebar — kept from old file */
 #cat-tabs {
-    display:flex; flex-wrap:wrap; gap:4px; padding:5px 6px;
-    background:#e9ecef; border-bottom:1px solid #dee2e6; flex-shrink:0;
-    max-height:95px; overflow:hidden; align-content:flex-start;
+    display:flex; flex-direction:column; gap:3px; padding:5px;
+    background:#e9ecef; border-right:1px solid #dee2e6; flex-shrink:0;
+    width:110px; overflow-y:auto; align-items:center;
 }
+#cat-tabs::-webkit-scrollbar { width:6px; }
+#cat-tabs::-webkit-scrollbar-thumb { background:#bdc3c7; border-radius:3px; }
+#cat-tabs::-webkit-scrollbar-track { background:#e9ecef; }
 .cat-tab {
-    width:125px !important; height:42px !important; padding:6px 8px !important; background:#fff; color:#495057;
-    border:1px solid #dee2e6 !important; cursor:pointer; border-radius:6px; font-size:12px;
+    width:100% !important; height:60px !important; padding:5px !important; background:#fff; color:#495057;
+    border:1px solid #dee2e6 !important; cursor:pointer; border-radius:6px; font-size:11px;
     font-family:Tahoma,Arial,sans-serif; font-weight:bold;
     transition:all 0.15s; border:2px solid transparent;
-    display:flex; align-items:center; justify-content:center; gap:5px;
-    touch-action:manipulation; flex-shrink:0; box-sizing:border-box;
+    display:flex; flex-direction:column; align-items:center; justify-content:center; gap:3px;
+    touch-action:manipulation; flex-shrink:0; box-sizing:border-box; text-align:center;
 }
-.cat-tab small { font-size:11px !important; }
+.cat-tab small { font-size:9px !important; }
 .cat-tab:hover { background:#f8f9fa; color:#3498db; border-color:#3498db; }
 .cat-tab.active { background:#3498db; color:#fff; border-color:#2980b9; }
-.cat-tab-img { width:28px; height:28px; object-fit:cover; border-radius:5px; flex-shrink:0; }
+.cat-tab-img { width:32px; height:32px; object-fit:cover; border-radius:5px; flex-shrink:0; }
 .cat-tab-text { display:block; }
-.cat-tab .cat-tab-img { width:28px; height:28px; border-radius:5px; }
+.cat-tab .cat-tab-img { width:32px; height:32px; border-radius:5px; }
 
 /* Item Grid */
 #items-grid {
     flex:1; overflow-y:auto; padding:10px;
-    display:grid; grid-template-columns: repeat(auto-fill, minmax(135px, 1fr)); gap:7px;
+    display:grid; grid-template-columns: repeat(auto-fill, minmax(130px, 1fr)); gap:7px;
     background:#f5f7fa; align-content:start;
 }
 .item-btn {
@@ -79,9 +82,7 @@ html, body { height:100%; font-family: Tahoma, Arial, sans-serif; background:#f5
 .item-btn .item-price { font-size:14px; color:#e67e22; font-weight:bold; }
 .item-btn .item-name-ar { font-size:14px; color:#7f8c8d; direction:rtl; }
 .item-btn.subcat { border-color:#e67e22; background:#fff9e6; }
-.item-btn.subcat.active {
-    background:#8ab4f8; color:#fff; border-color:#8ab4f8;
-}
+.item-btn.subcat.active { background:#8ab4f8; color:#fff; border-color:#8ab4f8; }
 
 /* ===== RIGHT: ORDER PANEL ===== */
 #order-panel {
@@ -139,21 +140,16 @@ html, body { height:100%; font-family: Tahoma, Arial, sans-serif; background:#f5
 }
 #nc-modal-body { padding:16px 18px; }
 .nc-field { margin-bottom:12px; }
-.nc-field label {
-    display:block; font-size:12px; color:#5a6c7d; font-weight:600; margin-bottom:4px;
-}
+.nc-field label { display:block; font-size:12px; color:#5a6c7d; font-weight:600; margin-bottom:4px; }
 .nc-field input, .nc-field textarea {
     width:100%; padding:8px 10px; border:1px solid #ced4da; border-radius:6px;
-    font-size:13px; font-family:Tahoma,Arial,sans-serif; color:#2c3e50;
-    box-sizing:border-box;
+    font-size:13px; font-family:Tahoma,Arial,sans-serif; color:#2c3e50; box-sizing:border-box;
 }
 .nc-field input:focus, .nc-field textarea:focus {
     outline:none; border-color:#e67e22; box-shadow:0 0 0 3px rgba(230,126,34,0.15);
 }
 .nc-field input::placeholder { color:#adb5bd; }
-#nc-modal-footer {
-    padding:0 18px 16px; display:flex; gap:8px; justify-content:flex-end;
-}
+#nc-modal-footer { padding:0 18px 16px; display:flex; gap:8px; justify-content:flex-end; }
 #nc-modal-footer button {
     padding:8px 18px; border:none; border-radius:6px; font-size:13px;
     cursor:pointer; font-family:Tahoma,Arial,sans-serif; font-weight:600;
@@ -292,7 +288,7 @@ html, body { height:100%; font-family: Tahoma, Arial, sans-serif; background:#f5
   <!-- MAIN -->
   <div id="main">
 
-    <!-- MENU PANEL -->
+    <!-- MENU PANEL (old vertical sidebar layout) -->
     <div id="menu-panel">
       <div id="cat-tabs">
         <div style="color:#888;font-size:13px;padding:8px 4px;align-self:center;">Loading menu...</div>
@@ -307,6 +303,7 @@ html, body { height:100%; font-family: Tahoma, Arial, sans-serif; background:#f5
         &#128203; Current Order
         <span id="order-count">0 items</span>
       </div>
+
       <!-- PRE-ORDER TOGGLE -->
       <div id="preorder-toggle-row" style="padding:8px 10px;background:#fffbe6;border-bottom:1px solid #f0e68c;display:flex;align-items:center;gap:8px;flex-shrink:0;">
         <label style="font-size:12px;color:#5a6c7d;font-weight:600;white-space:nowrap;">&#128203; Mode:</label>
@@ -366,15 +363,20 @@ html, body { height:100%; font-family: Tahoma, Arial, sans-serif; background:#f5
           <span>Change Due:</span>
           <span id="change-display">0.000 KD</span>
         </div>
+
+        <!-- NORMAL PAYMENT BUTTONS -->
         <div id="payment-buttons" style="display:flex;gap:6px;margin-top:10px;">
           <button onclick="if(orderItems.length>0)saveOrder(false)" style="flex:1;padding:12px 6px;background:linear-gradient(135deg,#2980b9,#1a5276);color:#fff;border:none;border-radius:8px;font-size:14px;font-weight:bold;cursor:pointer;font-family:Tahoma,Arial,sans-serif;">F1<br><span style="font-size:10px;font-weight:normal;">Pay</span></button>
           <button onclick="if(orderItems.length>0)saveOrder(true)" style="flex:1;padding:12px 6px;background:linear-gradient(135deg,#27ae60,#1e8449);color:#fff;border:none;border-radius:8px;font-size:14px;font-weight:bold;cursor:pointer;font-family:Tahoma,Arial,sans-serif;">F2<br><span style="font-size:10px;font-weight:normal;">Pay &amp; Print</span></button>
           <button onclick="holdOrder()" id="btn-hold" style="flex:1;padding:12px 6px;background:linear-gradient(135deg,#e67e22,#d35400);color:#fff;border:none;border-radius:8px;font-size:14px;font-weight:bold;cursor:pointer;font-family:Tahoma,Arial,sans-serif;">F3<br><span style="font-size:10px;font-weight:normal;">Hold</span></button>
         </div>
+
+        <!-- PRE-ORDER BUTTONS -->
         <div id="preorder-buttons" style="display:none;gap:6px;margin-top:10px;">
           <button onclick="if(orderItems.length>0)savePreOrder()" style="flex:1;padding:12px 6px;background:linear-gradient(135deg,#9b59b6,#8e44ad);color:#fff;border:none;border-radius:8px;font-size:14px;font-weight:bold;cursor:pointer;font-family:Tahoma,Arial,sans-serif;">F1<br><span style="font-size:10px;font-weight:normal;">Save Pre-Order</span></button>
           <button onclick="clearOrder()" style="flex:1;padding:12px 6px;background:linear-gradient(135deg,#95a5a6,#7f8c8d);color:#fff;border:none;border-radius:8px;font-size:14px;font-weight:bold;cursor:pointer;font-family:Tahoma,Arial,sans-serif;"><span style="font-size:10px;font-weight:normal;">Cancel</span></button>
         </div>
+
         <button id="btn-clear">&#128465; Clear Order</button>
       </div>
     </div>
@@ -396,6 +398,32 @@ html, body { height:100%; font-family: Tahoma, Arial, sans-serif; background:#f5
     <div class="item-ar" id="modal-item-ar"></div>
     <div class="size-btns" id="modal-size-btns"></div>
     <button id="size-modal-cancel">Cancel</button>
+  </div>
+</div>
+
+<!-- NEW CUSTOMER MODAL -->
+<div id="nc-modal-overlay" onclick="handleNcOverlayClick(event)">
+  <div id="nc-modal">
+    <div id="nc-modal-header">&#128203; Add New Customer</div>
+    <div id="nc-modal-body">
+      <div class="nc-field">
+        <label>Customer Name *</label>
+        <input type="text" id="nc-name" placeholder="e.g. Ahmed Mohammed" autocomplete="off">
+      </div>
+      <div class="nc-field">
+        <label>Mobile Number *</label>
+        <input type="text" id="nc-phone" placeholder="e.g. 66680241" autocomplete="off">
+      </div>
+      <div class="nc-field">
+        <label>Address</label>
+        <textarea id="nc-address" rows="2" placeholder="e.g. Block 3, Street 12, Salhiya"></textarea>
+      </div>
+    </div>
+    <div id="nc-error"></div>
+    <div id="nc-modal-footer">
+      <button id="nc-btn-cancel" onclick="closeNewCustomerModal()">Cancel</button>
+      <button id="nc-btn-save" onclick="saveNewCustomerFromModal()">Save Customer</button>
+    </div>
   </div>
 </div>
 
@@ -429,9 +457,19 @@ var menuData   = [];
 var orderItems = [];
 var activeCategory = 0;
 
+// Pre-order state
+var selectedCustomer  = null;
+var preOrderMode      = false;
+var loadedPreorderId  = null;
+
 // ===== UTILITY FUNCTIONS =====
 function esc(v) {
     return String(v == null ? '' : v).replace(/&/g, '&amp;').replace(/"/g, '&quot;').replace(/</g, '&lt;').replace(/>/g, '&gt;');
+}
+function escapeHtml(text) {
+    var div = document.createElement('div');
+    div.textContent = text;
+    return div.innerHTML;
 }
 
 // ===== LOAD MENU =====
@@ -467,7 +505,7 @@ function findCategory(catId, list) {
     return null;
 }
 
-// ===== RENDER CATEGORIES =====
+// ===== RENDER CATEGORIES (old vertical sidebar) =====
 function renderCategories() {
     var html = '';
     var tabsBox = document.getElementById('cat-tabs');
@@ -480,7 +518,6 @@ function renderCategories() {
         html += '</button>';
     }
     tabsBox.innerHTML = html;
-    // Force all tabs to same dimensions
     setTimeout(function() {
         var tabs = document.querySelectorAll('.cat-tab');
         for (var i = 0; i < tabs.length; i++) {
@@ -495,7 +532,6 @@ function renderCategories() {
 // ===== SHOW CATEGORY ITEMS =====
 function showCategory(catId) {
     activeCategory = catId;
-    // Update tab highlight
     var tabs = document.querySelectorAll('.cat-tab');
     for (var i = 0; i < tabs.length; i++) tabs[i].classList.remove('active');
     var t = document.getElementById('cat-' + catId);
@@ -553,9 +589,9 @@ function openSizeModal(item) {
     document.getElementById('modal-item-ar').textContent = item.name_ar;
 
     var sizes = [
-        { label: 'Small', key: 'price_small', price: item.price_small },
-        { label: 'Medium', key: 'price_medium', price: item.price_medium },
-        { label: 'Large', key: 'price_large', price: item.price_large }
+        { label: 'Small',  price: item.price_small },
+        { label: 'Medium', price: item.price_medium },
+        { label: 'Large',  price: item.price_large }
     ];
     var html = '';
     for (var i = 0; i < sizes.length; i++) {
@@ -594,13 +630,13 @@ function addToOrder(item, size, overridePrice) {
         }
     }
     orderItems.push({
-        key:   key,
-        id:    item.id,
-        name:  item.name_en + (size ? ' (' + size + ')' : ''),
+        key:     key,
+        id:      item.id,
+        name:    item.name_en + (size ? ' (' + size + ')' : ''),
         name_ar: item.name_ar,
-        size:  size,
-        price: price,
-        qty:   1
+        size:    size,
+        price:   price,
+        qty:     1
     });
     renderOrder();
 }
@@ -617,13 +653,13 @@ function renderOrder() {
     }
 
     var html = '';
-    var total = 0;
+    var total    = 0;
     var totalQty = 0;
 
     for (var i = 0; i < orderItems.length; i++) {
-        var oi = orderItems[i];
+        var oi  = orderItems[i];
         var sub = oi.price * oi.qty;
-        total += sub;
+        total    += sub;
         totalQty += oi.qty;
 
         html += '<div class="order-item">';
@@ -641,7 +677,6 @@ function renderOrder() {
     container.innerHTML = html;
     document.getElementById('total-display').textContent = total.toFixed(3) + ' KD';
     document.getElementById('order-count').textContent = totalQty + (totalQty === 1 ? ' item' : ' items');
-    // Keep cash input synced to total for full-payment modes
     var pmode = document.getElementById('payment-mode').value;
     if (pmode === 'Talabat' || pmode === 'Keeta') {
         document.getElementById('cash-input').value = total.toFixed(3);
@@ -652,9 +687,7 @@ function renderOrder() {
 // ===== QTY CHANGE =====
 function changeQty(index, delta) {
     orderItems[index].qty += delta;
-    if (orderItems[index].qty <= 0) {
-        orderItems.splice(index, 1);
-    }
+    if (orderItems[index].qty <= 0) orderItems.splice(index, 1);
     renderOrder();
 }
 
@@ -666,22 +699,20 @@ function removeItem(index) {
 
 // ===== PAYMENT MODE HANDLER =====
 document.getElementById('payment-mode').addEventListener('change', function() {
-    var mode = this.value;
+    var mode      = this.value;
     var cashInput = document.getElementById('cash-input');
-    var refRow = document.getElementById('payment-ref-row');
-    var refInput = document.getElementById('payment-ref');
-    
-    // Show reference field for KNET, Keeta, Talabat
+    var refRow    = document.getElementById('payment-ref-row');
+    var refInput  = document.getElementById('payment-ref');
+
     if (mode === 'KNET' || mode === 'Keeta' || mode === 'Talabat') {
         refRow.style.display = 'flex';
     } else {
         refRow.style.display = 'none';
         refInput.value = '';
     }
-    
+
     if (mode === 'Talabat' || mode === 'Keeta') {
-        // Full payment, no change - lock cash input to total
-        cashInput.value = calcTotal().toFixed(3);
+        cashInput.value    = calcTotal().toFixed(3);
         cashInput.readOnly = true;
         cashInput.style.background = '#f0f0f0';
     } else {
@@ -695,10 +726,10 @@ document.getElementById('payment-mode').addEventListener('change', function() {
 // ===== CHANGE CALCULATION =====
 document.getElementById('cash-input').addEventListener('input', updateChange);
 function updateChange() {
-    var total = calcTotal();
-    var cash  = parseFloat(document.getElementById('cash-input').value) || 0;
+    var total  = calcTotal();
+    var cash   = parseFloat(document.getElementById('cash-input').value) || 0;
     var change = cash - total;
-    var el = document.getElementById('change-display');
+    var el     = document.getElementById('change-display');
     if (change < 0) {
         el.textContent = 'Insufficient (' + Math.abs(change).toFixed(3) + ' KD short)';
         el.style.color = '#e74c3c';
@@ -716,36 +747,31 @@ function calcTotal() {
 // ===== CHECKOUT =====
 function saveOrder(printReceipt) {
     if (orderItems.length === 0) return;
-    var total    = calcTotal();
-    var paymentMode = document.getElementById('payment-mode').value;
+    var total          = calcTotal();
+    var paymentMode    = document.getElementById('payment-mode').value;
     var cashInputValue = document.getElementById('cash-input').value.trim();
-    var cashPaid = cashInputValue === '' ? total : parseFloat(cashInputValue);
+    var cashPaid       = cashInputValue === '' ? total : parseFloat(cashInputValue);
     if (isNaN(cashPaid)) cashPaid = total;
-    var change   = cashPaid - total;
+    var change = cashPaid - total;
 
-    if (cashPaid < total) {
-        showToast('Cash paid is less than total!', true);
-        return;
-    }
+    if (cashPaid < total) { showToast('Cash paid is less than total!', true); return; }
 
-    var tableId = document.getElementById('table-select').value;
-    var tableSel = document.getElementById('table-select');
-    var tableName = tableId ? tableSel.options[tableSel.selectedIndex].getAttribute('data-name') : null;
+    var tableId    = document.getElementById('table-select').value;
+    var tableSel   = document.getElementById('table-select');
+    var tableName  = tableId ? tableSel.options[tableSel.selectedIndex].getAttribute('data-name') : null;
     var paymentRef = document.getElementById('payment-ref').value.trim();
 
     var payload = {
-        items:        orderItems,
-        total:        total,
-        payment_mode: paymentMode,
+        items:             orderItems,
+        total:             total,
+        payment_mode:      paymentMode,
         payment_reference: paymentRef,
-        cash_paid:    cashPaid,
-        change_due:   change,
-        table_id:     tableId ? parseInt(tableId) : null,
-        table_name:   tableName
+        cash_paid:         cashPaid,
+        change_due:        change,
+        table_id:          tableId ? parseInt(tableId) : null,
+        table_name:        tableName
     };
-    if (loadedPreorderId) {
-        payload.preorder_id = loadedPreorderId;
-    }
+    if (loadedPreorderId) payload.preorder_id = loadedPreorderId;
 
     showToast('Saving order...');
 
@@ -761,8 +787,7 @@ function saveOrder(printReceipt) {
                     if (printReceipt) {
                         window.open('receipt.php?id=' + res.invoice_id + '&autoprint=1', '_blank');
                     }
-                    // Clear order
-                    orderItems = [];
+                    orderItems       = [];
                     loadedPreorderId = null;
                     selectedCustomer = null;
                     document.getElementById('customer-panel').style.display = 'none';
@@ -807,28 +832,24 @@ var toastTimeout;
 function showToast(msg, isError) {
     var el = document.getElementById('toast');
     el.textContent = msg;
-    el.className = 'show' + (isError ? ' error' : '');
+    el.className   = 'show' + (isError ? ' error' : '');
     clearTimeout(toastTimeout);
     toastTimeout = setTimeout(function() { el.className = ''; }, 2800);
 }
 
 // ===== PRE-ORDER TOGGLE =====
-var selectedCustomer = null;
-var preOrderMode = false;
-var loadedPreorderId = null;
-
 function togglePreOrderMode() {
     preOrderMode = !preOrderMode;
-    var btn = document.getElementById('btn-preorder-mode');
-    var tableRow = document.getElementById('table-row');
-    var customerPanel = document.getElementById('customer-panel');
+    var btn            = document.getElementById('btn-preorder-mode');
+    var tableRow       = document.getElementById('table-row');
+    var customerPanel  = document.getElementById('customer-panel');
     var paymentSection = document.getElementById('payment-mode').parentElement;
-    var refRow = document.getElementById('payment-ref-row');
-    var cashRow = document.getElementById('cash-input').parentElement;
-    var changeRow = document.querySelector('.change-row');
-    var payButtons = document.getElementById('payment-buttons');
-    var preButtons = document.getElementById('preorder-buttons');
-    var btnClear = document.getElementById('btn-clear');
+    var refRow         = document.getElementById('payment-ref-row');
+    var cashRow        = document.getElementById('cash-input').parentElement;
+    var changeRow      = document.querySelector('.change-row');
+    var payButtons     = document.getElementById('payment-buttons');
+    var preButtons     = document.getElementById('preorder-buttons');
+    var btnClear       = document.getElementById('btn-clear');
 
     if (preOrderMode) {
         btn.textContent = 'Pre-Order: ON';
@@ -858,7 +879,6 @@ function togglePreOrderMode() {
         payButtons.style.display = 'flex';
         preButtons.style.display = 'none';
         btnClear.style.display = 'block';
-        // loadedPreorderId kept until payment completes
         clearCustomer();
     }
 }
@@ -867,7 +887,7 @@ function togglePreOrderMode() {
 var customerSearchTimeout;
 function searchCustomers() {
     clearTimeout(customerSearchTimeout);
-    var q = document.getElementById('customer-search').value.trim();
+    var q        = document.getElementById('customer-search').value.trim();
     var dropdown = document.getElementById('customer-dropdown');
     if (q.length < 2) { dropdown.style.display = 'none'; return; }
 
@@ -883,7 +903,7 @@ function searchCustomers() {
                         dropdown.innerHTML = '<div class="customer-option"><span style="color:#999;">No customer found</span></div>';
                     } else {
                         for (var i = 0; i < list.length; i++) {
-                            var c = list[i];
+                            var c   = list[i];
                             var div = document.createElement('div');
                             div.className = 'customer-option';
                             div.innerHTML = '<div class="c-name">' + escapeHtml(c.name) + '</div><div class="c-phone">' + escapeHtml(c.phone) + '</div>';
@@ -900,9 +920,7 @@ function searchCustomers() {
 }
 
 function handleCustomerKey(e) {
-    if (e.key === 'Escape') {
-        document.getElementById('customer-dropdown').style.display = 'none';
-    }
+    if (e.key === 'Escape') document.getElementById('customer-dropdown').style.display = 'none';
 }
 
 function selectCustomer(customer) {
@@ -912,7 +930,7 @@ function selectCustomer(customer) {
     document.getElementById('customer-search-wrap').style.display = 'none';
     document.getElementById('customer-selected').style.display = 'block';
     document.getElementById('btn-add-customer').style.display = 'none';
-    document.getElementById('cs-name').textContent = customer.name;
+    document.getElementById('cs-name').textContent  = customer.name;
     document.getElementById('cs-phone').textContent = customer.phone;
 }
 
@@ -925,9 +943,11 @@ function clearCustomer() {
 }
 
 // ===== NEW CUSTOMER MODAL =====
+function showNewCustomerModal() { openNewCustomerModal(); }
+
 function openNewCustomerModal() {
-    document.getElementById('nc-name').value = '';
-    document.getElementById('nc-phone').value = '';
+    document.getElementById('nc-name').value    = '';
+    document.getElementById('nc-phone').value   = '';
     document.getElementById('nc-address').value = '';
     document.getElementById('nc-error').style.display = 'none';
     document.getElementById('nc-modal-overlay').classList.add('show');
@@ -936,13 +956,16 @@ function openNewCustomerModal() {
 function closeNewCustomerModal() {
     document.getElementById('nc-modal-overlay').classList.remove('show');
 }
+function handleNcOverlayClick(e) {
+    if (e.target.id === 'nc-modal-overlay') closeNewCustomerModal();
+}
 function saveNewCustomerFromModal() {
-    var name = document.getElementById('nc-name').value.trim();
-    var phone = document.getElementById('nc-phone').value.trim();
+    var name    = document.getElementById('nc-name').value.trim();
+    var phone   = document.getElementById('nc-phone').value.trim();
     var address = document.getElementById('nc-address').value.trim();
-    var err = document.getElementById('nc-error');
+    var err     = document.getElementById('nc-error');
 
-    if (!name) { err.textContent = 'Please enter customer name.'; err.style.display = 'block'; return; }
+    if (!name)  { err.textContent = 'Please enter customer name.';  err.style.display = 'block'; return; }
     if (!phone) { err.textContent = 'Please enter customer phone.'; err.style.display = 'block'; return; }
 
     var xhr = new XMLHttpRequest();
@@ -972,20 +995,6 @@ function saveNewCustomerFromModal() {
     };
     xhr.send(JSON.stringify({name: name, phone: phone, address: address}));
 }
-// Close modal on overlay click
-function handleNcOverlayClick(e) {
-    if (e.target.id === 'nc-modal-overlay') closeNewCustomerModal();
-}
-
-function showNewCustomerModal() {
-    openNewCustomerModal();
-}
-
-function escapeHtml(text) {
-    var div = document.createElement('div');
-    div.textContent = text;
-    return div.innerHTML;
-}
 
 // ===== SAVE PRE-ORDER =====
 function savePreOrder() {
@@ -995,12 +1004,12 @@ function savePreOrder() {
         document.getElementById('customer-search').focus();
         return;
     }
-    var total = calcTotal();
+    var total   = calcTotal();
     var payload = {
-        items: orderItems,
-        total: total,
-        customer_id: selectedCustomer.id,
-        customer_name: selectedCustomer.name,
+        items:          orderItems,
+        total:          total,
+        customer_id:    selectedCustomer.id,
+        customer_name:  selectedCustomer.name,
         customer_phone: selectedCustomer.phone
     };
     showToast('Saving pre-order...');
@@ -1013,7 +1022,7 @@ function savePreOrder() {
                 var res = JSON.parse(xhr.responseText);
                 if (res.success) {
                     showToast('Pre-order saved: ' + res.invoice_number);
-                    orderItems = [];
+                    orderItems       = [];
                     loadedPreorderId = null;
                     clearCustomer();
                     if (preOrderMode) { preOrderMode = false; togglePreOrderMode(); }
@@ -1044,16 +1053,24 @@ document.addEventListener('keydown', function(e) {
     if (e.key === 'F1') {
         e.preventDefault();
         if (orderItems.length > 0) {
-            if (preOrderMode) {
-                savePreOrder();
-            } else {
-                saveOrder(false);
-            }
+            if (preOrderMode) savePreOrder();
+            else saveOrder(false);
         }
     } else if (e.key === 'F2') {
         e.preventDefault();
-        if (orderItems.length > 0 && !preOrderMode) {
-            saveOrder(true);
+        if (orderItems.length > 0 && !preOrderMode) saveOrder(true);
+    } else if (e.key === 'F3') {
+        e.preventDefault();
+        holdOrder();
+    } else if (e.key === 'Escape') {
+        if (document.getElementById('nc-modal-overlay').classList.contains('show')) {
+            closeNewCustomerModal();
+        }
+    } else if (e.key === 'Enter' && document.getElementById('nc-modal-overlay').classList.contains('show')) {
+        if (document.activeElement.id === 'nc-name' ||
+            document.activeElement.id === 'nc-phone' ||
+            document.activeElement.id === 'nc-address') {
+            saveNewCustomerFromModal();
         }
     }
 });
@@ -1076,13 +1093,13 @@ function loadTables() {
 }
 
 function renderTableSelect() {
-    var sel = document.getElementById('table-select');
+    var sel     = document.getElementById('table-select');
     var current = sel.value;
     sel.innerHTML = '<option value="">-- No Table (Takeaway) --</option>';
     for (var i = 0; i < tablesData.length; i++) {
-        var t = tablesData[i];
-        var label = t.name + (t.status === 'occupied' ? ' 🔴 Occupied' : ' 🟢');
-        var opt = document.createElement('option');
+        var t     = tablesData[i];
+        var label = t.name + (t.status === 'occupied' ? ' \uD83D\uDD34 Occupied' : ' \uD83D\uDFE2');
+        var opt   = document.createElement('option');
         opt.value = t.id;
         opt.setAttribute('data-name', t.name);
         opt.setAttribute('data-status', t.status);
@@ -1094,13 +1111,9 @@ function renderTableSelect() {
 
 document.getElementById('table-select').addEventListener('change', function() {
     var tableId = this.value;
-    var badge = document.getElementById('table-status-badge');
-    if (!tableId) {
-        badge.style.display = 'none';
-        return;
-    }
+    var badge   = document.getElementById('table-status-badge');
+    if (!tableId) { badge.style.display = 'none'; return; }
 
-    // Check if table has an open order and load it
     var xhr = new XMLHttpRequest();
     xhr.open('GET', 'api/get_open_order.php?table_id=' + tableId, true);
     xhr.onreadystatechange = function() {
@@ -1108,18 +1121,17 @@ document.getElementById('table-select').addEventListener('change', function() {
             try {
                 var res = JSON.parse(xhr.responseText);
                 if (res.invoice && res.items.length > 0) {
-                    // Load existing open order into the cart
                     orderItems = [];
                     for (var i = 0; i < res.items.length; i++) {
                         var it = res.items[i];
                         orderItems.push({
-                            key: it.id + '_loaded',
-                            id: it.id,
-                            name: it.item_name + (it.size ? ' (' + it.size + ')' : ''),
+                            key:     it.id + '_loaded',
+                            id:      it.id,
+                            name:    it.item_name + (it.size ? ' (' + it.size + ')' : ''),
                             name_ar: it.item_name_ar || '',
-                            size: it.size,
-                            price: parseFloat(it.price),
-                            qty: parseInt(it.quantity)
+                            size:    it.size,
+                            price:   parseFloat(it.price),
+                            qty:     parseInt(it.quantity)
                         });
                     }
                     renderOrder();
@@ -1129,7 +1141,6 @@ document.getElementById('table-select').addEventListener('change', function() {
                     badge.textContent = 'Open order loaded';
                     showToast('Loaded open order for ' + document.getElementById('table-select').options[document.getElementById('table-select').selectedIndex].getAttribute('data-name'));
                 } else {
-                    // No open order for this table - start a fresh empty cart
                     orderItems = [];
                     renderOrder();
                     badge.style.display = 'none';
@@ -1145,14 +1156,8 @@ function holdOrder() {
     var tableId = document.getElementById('table-select').value;
     if (!tableId) { showToast('Please select a table to hold the order', true); return; }
     var tableName = document.getElementById('table-select').options[document.getElementById('table-select').selectedIndex].getAttribute('data-name');
-    var total = calcTotal();
-
-    var payload = {
-        table_id: parseInt(tableId),
-        table_name: tableName,
-        items: orderItems,
-        total: total
-    };
+    var total     = calcTotal();
+    var payload   = { table_id: parseInt(tableId), table_name: tableName, items: orderItems, total: total };
 
     showToast('Holding order for ' + tableName + '...');
     var xhr = new XMLHttpRequest();
@@ -1181,59 +1186,40 @@ function holdOrder() {
     xhr.send(JSON.stringify(payload));
 }
 
-// F3 keyboard shortcut for Hold
-document.addEventListener('keydown', function(e) {
-    if (e.key === 'F3') {
-        e.preventDefault();
-        holdOrder();
-    }
-    if (e.key === 'Escape') {
-        if (document.getElementById('nc-modal-overlay').classList.contains('show')) {
-            closeNewCustomerModal();
-        }
-    }
-    if (e.key === 'Enter' && document.getElementById('nc-modal-overlay').classList.contains('show')) {
-        if (document.activeElement.id === 'nc-name' || document.activeElement.id === 'nc-phone' || document.activeElement.id === 'nc-address') {
-            saveNewCustomerFromModal();
-        }
-    }
-});
-
 // ===== LOAD PRE-ORDER FROM URL =====
-var urlParams = new URLSearchParams(window.location.search);
+var urlParams      = new URLSearchParams(window.location.search);
 var loadPreorderId = urlParams.get('load_preorder');
 if (loadPreorderId) {
-    var xhr = new XMLHttpRequest();
-    xhr.open('GET', 'api/get_preorder.php?id=' + encodeURIComponent(loadPreorderId), true);
-    xhr.onreadystatechange = function() {
-        if (xhr.readyState === 4 && xhr.status === 200) {
+    var xhrPO = new XMLHttpRequest();
+    xhrPO.open('GET', 'api/get_preorder.php?id=' + encodeURIComponent(loadPreorderId), true);
+    xhrPO.onreadystatechange = function() {
+        if (xhrPO.readyState === 4 && xhrPO.status === 200) {
             try {
-                var res = JSON.parse(xhr.responseText);
+                var res = JSON.parse(xhrPO.responseText);
                 if (res.success) {
                     orderItems = [];
                     for (var i = 0; i < res.items.length; i++) {
                         var it = res.items[i];
                         orderItems.push({
-                            name: it.item_name,
+                            name:    it.item_name,
                             name_ar: it.item_name_ar,
-                            size: it.size,
-                            price: parseFloat(it.price),
-                            qty: parseInt(it.quantity)
+                            size:    it.size,
+                            price:   parseFloat(it.price),
+                            qty:     parseInt(it.quantity)
                         });
                     }
                     loadedPreorderId = parseInt(loadPreorderId);
 
-                    // Show customer info but stay in normal Pay mode
                     if (res.invoice.customer_id) {
                         selectedCustomer = {
-                            id: res.invoice.customer_id,
-                            name: res.invoice.customer_name,
+                            id:    res.invoice.customer_id,
+                            name:  res.invoice.customer_name,
                             phone: res.invoice.customer_phone
                         };
                         document.getElementById('customer-search-wrap').style.display = 'none';
                         document.getElementById('customer-selected').style.display = 'block';
                         document.getElementById('btn-add-customer').style.display = 'none';
-                        document.getElementById('cs-name').textContent = res.invoice.customer_name;
+                        document.getElementById('cs-name').textContent  = res.invoice.customer_name;
                         document.getElementById('cs-phone').textContent = res.invoice.customer_phone;
                         document.getElementById('customer-panel').style.display = 'block';
                     }
@@ -1246,39 +1232,12 @@ if (loadPreorderId) {
             } catch(e) {}
         }
     };
-    xhr.send();
+    xhrPO.send();
 }
 
 // ===== INIT =====
 loadMenu();
 loadTables();
 </script>
-
-<!-- NEW CUSTOMER MODAL -->
-<div id="nc-modal-overlay" onclick="handleNcOverlayClick(event)">
-  <div id="nc-modal">
-    <div id="nc-modal-header">&#128203; Add New Customer</div>
-    <div id="nc-modal-body">
-      <div class="nc-field">
-        <label>Customer Name *</label>
-        <input type="text" id="nc-name" placeholder="e.g. Ahmed Mohammed" autocomplete="off">
-      </div>
-      <div class="nc-field">
-        <label>Mobile Number *</label>
-        <input type="text" id="nc-phone" placeholder="e.g. 66680241" autocomplete="off">
-      </div>
-      <div class="nc-field">
-        <label>Address</label>
-        <textarea id="nc-address" rows="2" placeholder="e.g. Block 3, Street 12, Salhiya"></textarea>
-      </div>
-    </div>
-    <div id="nc-error"></div>
-    <div id="nc-modal-footer">
-      <button id="nc-btn-cancel" onclick="closeNewCustomerModal()">Cancel</button>
-      <button id="nc-btn-save" onclick="saveNewCustomerFromModal()">Save Customer</button>
-    </div>
-  </div>
-</div>
-
 </body>
 </html>
