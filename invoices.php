@@ -284,7 +284,7 @@ function renderTable(invoices) {
         html += '<td style="color:#555">' + inv.id + '</td>';
         html += '<td style="color:#aac4ff">' + inv.invoice_number + '</td>';
         html += '<td>' + inv.created_at + '</td>';
-        html += '<td style="color:#aac4ff">' + (inv.user_name || 'Unknown') + '</td>';
+        html += '<td style="color:#aac4ff">' + ((inv.user_name && inv.user_name !== '0' && String(inv.user_name).trim() !== '') ? inv.user_name : 'Unknown') + '</td>';
         html += '<td class="amount">' + parseFloat(inv.total).toFixed(3) + '</td>';
         html += '<td style="color:#888">' + (inv.payment_mode || 'Cash') + '</td>';
         html += '<td style="color:#666;font-size:12px">' + (inv.payment_reference || '-') + '</td>';
@@ -438,7 +438,8 @@ function exportToExcel() {
         var inv = allInvoices[i];
         csv += inv.invoice_number + ',';
         csv += inv.created_at + ',';
-        csv += (inv.user_name || 'Unknown') + ',';
+        var un = (inv.user_name && inv.user_name !== '0' && String(inv.user_name).trim() !== '') ? inv.user_name : 'Unknown';
+        csv += un + ',';
         csv += parseFloat(inv.total).toFixed(3) + ',';
         csv += (inv.payment_mode || 'Cash') + ',';
         csv += (inv.payment_reference || '') + ',';
@@ -506,7 +507,7 @@ function generatePDFContent(invoices, data) {
         rows += '<tr>';
         rows += '<td>' + inv.invoice_number + '</td>';
         rows += '<td>' + inv.created_at + '</td>';
-        rows += '<td>' + (inv.user_name || 'Unknown') + '</td>';
+        rows += '<td>' + ((inv.user_name && inv.user_name !== '0' && String(inv.user_name).trim() !== '') ? inv.user_name : 'Unknown') + '</td>';
         rows += '<td>' + parseFloat(inv.total).toFixed(3) + '</td>';
         rows += '<td>' + (inv.payment_mode || 'Cash') + '</td>';
         rows += '<td>' + (inv.payment_reference || '-') + '</td>';

@@ -96,6 +96,74 @@ html, body { height:100%; font-family: Tahoma, Arial, sans-serif; background:#f5
 }
 #order-header span { font-size:12px; color:#7f8c8d; }
 
+/* ===== CUSTOMER SEARCH (Pre-order) ===== */
+#customer-panel { display:none; padding:8px 10px; background:#fffbe6; border-bottom:1px solid #f0e68c; }
+#customer-search-wrap { position:relative; }
+#customer-search { width:100%; padding:6px 10px; border:1px solid #f0e68c; border-radius:6px; font-size:13px; }
+#customer-dropdown {
+    position:absolute; left:0; right:0; top:100%; background:#fff; border:1px solid #dee2e6;
+    border-radius:6px; margin-top:2px; max-height:160px; overflow-y:auto; z-index:100;
+    box-shadow:0 4px 12px rgba(0,0,0,0.1); display:none;
+}
+.customer-option { padding:8px 10px; cursor:pointer; border-bottom:1px solid #f0f0f0; font-size:12px; }
+.customer-option:hover { background:#e8f4fd; }
+.customer-option .c-name { font-weight:bold; color:#2c3e50; }
+.customer-option .c-phone { color:#7f8c8d; font-size:11px; }
+#customer-selected { display:none; padding:6px 0; font-size:12px; }
+#customer-selected .cs-label { color:#7f8c8d; }
+#customer-selected .cs-value { font-weight:bold; color:#2c3e50; }
+.btn-new-customer {
+    padding:4px 10px; background:#e67e22; color:#fff; border:none; border-radius:4px;
+    font-size:11px; cursor:pointer; margin-top:4px;
+}
+
+/* ===== NEW CUSTOMER MODAL ===== */
+#nc-modal-overlay {
+    position:fixed; top:0; left:0; right:0; bottom:0;
+    background:rgba(0,0,0,0.5); z-index:1000; display:none;
+    align-items:center; justify-content:center;
+}
+#nc-modal-overlay.show { display:flex; }
+#nc-modal {
+    background:#fff; border-radius:12px; width:380px; max-width:92%;
+    box-shadow:0 20px 60px rgba(0,0,0,0.3); overflow:hidden;
+    animation:ncSlideIn 0.25s ease-out;
+}
+@keyframes ncSlideIn {
+    from { transform:translateY(-30px); opacity:0; }
+    to   { transform:translateY(0); opacity:1; }
+}
+#nc-modal-header {
+    background:linear-gradient(135deg,#e67e22,#d35400); color:#fff;
+    padding:14px 18px; font-size:15px; font-weight:bold;
+}
+#nc-modal-body { padding:16px 18px; }
+.nc-field { margin-bottom:12px; }
+.nc-field label {
+    display:block; font-size:12px; color:#5a6c7d; font-weight:600; margin-bottom:4px;
+}
+.nc-field input, .nc-field textarea {
+    width:100%; padding:8px 10px; border:1px solid #ced4da; border-radius:6px;
+    font-size:13px; font-family:Tahoma,Arial,sans-serif; color:#2c3e50;
+    box-sizing:border-box;
+}
+.nc-field input:focus, .nc-field textarea:focus {
+    outline:none; border-color:#e67e22; box-shadow:0 0 0 3px rgba(230,126,34,0.15);
+}
+.nc-field input::placeholder { color:#adb5bd; }
+#nc-modal-footer {
+    padding:0 18px 16px; display:flex; gap:8px; justify-content:flex-end;
+}
+#nc-modal-footer button {
+    padding:8px 18px; border:none; border-radius:6px; font-size:13px;
+    cursor:pointer; font-family:Tahoma,Arial,sans-serif; font-weight:600;
+}
+#nc-btn-save { background:#e67e22; color:#fff; }
+#nc-btn-save:hover { background:#d35400; }
+#nc-btn-cancel { background:#e9ecef; color:#495057; }
+#nc-btn-cancel:hover { background:#dee2e6; }
+#nc-error { color:#e74c3c; font-size:12px; display:none; padding:0 18px 8px; }
+
 #order-items { flex:1; overflow-y:auto; padding:6px; background:#f5f7fa; }
 .order-item {
     display:flex; align-items:center; padding:7px 6px;
@@ -214,6 +282,7 @@ html, body { height:100%; font-family: Tahoma, Arial, sans-serif; background:#f5
       <a href="dashboard.php">&#128200; Dashboard</a>
       <a href="invoices.php">&#128196; Invoices</a>
       <a href="tables.php">&#127860; Tables</a>
+      <a href="pre_orders.php">&#128203; Pre-Orders</a>
       <?php if (is_admin()): ?><a href="settings.php">&#9881; Settings</a><?php endif; ?>
       <?php if (is_admin()): ?><a href="users.php">&#128101; Users</a><?php endif; ?>
       <a href="logout.php" onclick="showConfirm('Logout','Are you sure you want to logout?','Yes, Logout','\uD83D\uDEAA',function(){ window.location.href='logout.php'; }); return false;">Logout</a>
@@ -238,12 +307,33 @@ html, body { height:100%; font-family: Tahoma, Arial, sans-serif; background:#f5
         &#128203; Current Order
         <span id="order-count">0 items</span>
       </div>
-      <div style="padding:8px 10px;background:#f0f4ff;border-bottom:1px solid #dee2e6;display:flex;align-items:center;gap:8px;flex-shrink:0;">
+      <!-- PRE-ORDER TOGGLE -->
+      <div id="preorder-toggle-row" style="padding:8px 10px;background:#fffbe6;border-bottom:1px solid #f0e68c;display:flex;align-items:center;gap:8px;flex-shrink:0;">
+        <label style="font-size:12px;color:#5a6c7d;font-weight:600;white-space:nowrap;">&#128203; Mode:</label>
+        <button id="btn-preorder-mode" onclick="togglePreOrderMode()" style="flex:1;padding:6px 10px;border:1px solid #e67e22;border-radius:7px;font-size:13px;background:#fff;color:#e67e22;cursor:pointer;font-weight:600;">Pre-Order: OFF</button>
+      </div>
+
+      <!-- TABLE SELECTOR -->
+      <div id="table-row" style="padding:8px 10px;background:#f0f4ff;border-bottom:1px solid #dee2e6;display:flex;align-items:center;gap:8px;flex-shrink:0;">
         <label style="font-size:12px;color:#5a6c7d;font-weight:600;white-space:nowrap;">&#127860; Table:</label>
         <select id="table-select" style="flex:1;padding:6px 10px;border:1px solid #dfe4ea;border-radius:7px;font-size:13px;background:#fff;color:#2c3e50;">
           <option value="">-- No Table (Takeaway) --</option>
         </select>
         <span id="table-status-badge" style="font-size:11px;padding:3px 8px;border-radius:10px;display:none;"></span>
+      </div>
+
+      <!-- CUSTOMER SEARCH (Pre-order mode only) -->
+      <div id="customer-panel" style="display:none;">
+        <div id="customer-search-wrap">
+          <input type="text" id="customer-search" placeholder="Search by name or phone..." oninput="searchCustomers()" onkeydown="handleCustomerKey(event)" autocomplete="off">
+          <div id="customer-dropdown"></div>
+        </div>
+        <div id="customer-selected">
+          <div><span class="cs-label">Name:</span> <span class="cs-value" id="cs-name"></span></div>
+          <div><span class="cs-label">Phone:</span> <span class="cs-value" id="cs-phone"></span></div>
+          <button class="btn-new-customer" onclick="clearCustomer()">Change Customer</button>
+        </div>
+        <button class="btn-new-customer" id="btn-add-customer" onclick="showNewCustomerModal()">+ New Customer</button>
       </div>
 
       <div id="order-items">
@@ -276,10 +366,14 @@ html, body { height:100%; font-family: Tahoma, Arial, sans-serif; background:#f5
           <span>Change Due:</span>
           <span id="change-display">0.000 KD</span>
         </div>
-        <div style="display:flex;gap:6px;margin-top:10px;">
+        <div id="payment-buttons" style="display:flex;gap:6px;margin-top:10px;">
           <button onclick="if(orderItems.length>0)saveOrder(false)" style="flex:1;padding:12px 6px;background:linear-gradient(135deg,#2980b9,#1a5276);color:#fff;border:none;border-radius:8px;font-size:14px;font-weight:bold;cursor:pointer;font-family:Tahoma,Arial,sans-serif;">F1<br><span style="font-size:10px;font-weight:normal;">Pay</span></button>
           <button onclick="if(orderItems.length>0)saveOrder(true)" style="flex:1;padding:12px 6px;background:linear-gradient(135deg,#27ae60,#1e8449);color:#fff;border:none;border-radius:8px;font-size:14px;font-weight:bold;cursor:pointer;font-family:Tahoma,Arial,sans-serif;">F2<br><span style="font-size:10px;font-weight:normal;">Pay &amp; Print</span></button>
           <button onclick="holdOrder()" id="btn-hold" style="flex:1;padding:12px 6px;background:linear-gradient(135deg,#e67e22,#d35400);color:#fff;border:none;border-radius:8px;font-size:14px;font-weight:bold;cursor:pointer;font-family:Tahoma,Arial,sans-serif;">F3<br><span style="font-size:10px;font-weight:normal;">Hold</span></button>
+        </div>
+        <div id="preorder-buttons" style="display:none;gap:6px;margin-top:10px;">
+          <button onclick="if(orderItems.length>0)savePreOrder()" style="flex:1;padding:12px 6px;background:linear-gradient(135deg,#9b59b6,#8e44ad);color:#fff;border:none;border-radius:8px;font-size:14px;font-weight:bold;cursor:pointer;font-family:Tahoma,Arial,sans-serif;">F1<br><span style="font-size:10px;font-weight:normal;">Save Pre-Order</span></button>
+          <button onclick="clearOrder()" style="flex:1;padding:12px 6px;background:linear-gradient(135deg,#95a5a6,#7f8c8d);color:#fff;border:none;border-radius:8px;font-size:14px;font-weight:bold;cursor:pointer;font-family:Tahoma,Arial,sans-serif;"><span style="font-size:10px;font-weight:normal;">Cancel</span></button>
         </div>
         <button id="btn-clear">&#128465; Clear Order</button>
       </div>
@@ -649,6 +743,9 @@ function saveOrder(printReceipt) {
         table_id:     tableId ? parseInt(tableId) : null,
         table_name:   tableName
     };
+    if (loadedPreorderId) {
+        payload.preorder_id = loadedPreorderId;
+    }
 
     showToast('Saving order...');
 
@@ -666,6 +763,11 @@ function saveOrder(printReceipt) {
                     }
                     // Clear order
                     orderItems = [];
+                    loadedPreorderId = null;
+                    selectedCustomer = null;
+                    document.getElementById('customer-panel').style.display = 'none';
+                    document.getElementById('customer-search-wrap').style.display = 'block';
+                    document.getElementById('customer-selected').style.display = 'none';
                     var ci = document.getElementById('cash-input');
                     ci.value = ''; ci.readOnly = false; ci.style.background = '#fff';
                     document.getElementById('payment-mode').value = 'Cash';
@@ -710,14 +812,249 @@ function showToast(msg, isError) {
     toastTimeout = setTimeout(function() { el.className = ''; }, 2800);
 }
 
+// ===== PRE-ORDER TOGGLE =====
+var selectedCustomer = null;
+var preOrderMode = false;
+var loadedPreorderId = null;
+
+function togglePreOrderMode() {
+    preOrderMode = !preOrderMode;
+    var btn = document.getElementById('btn-preorder-mode');
+    var tableRow = document.getElementById('table-row');
+    var customerPanel = document.getElementById('customer-panel');
+    var paymentSection = document.getElementById('payment-mode').parentElement;
+    var refRow = document.getElementById('payment-ref-row');
+    var cashRow = document.getElementById('cash-input').parentElement;
+    var changeRow = document.querySelector('.change-row');
+    var payButtons = document.getElementById('payment-buttons');
+    var preButtons = document.getElementById('preorder-buttons');
+    var btnClear = document.getElementById('btn-clear');
+
+    if (preOrderMode) {
+        btn.textContent = 'Pre-Order: ON';
+        btn.style.background = '#e67e22';
+        btn.style.color = '#fff';
+        tableRow.style.display = 'none';
+        customerPanel.style.display = 'block';
+        paymentSection.style.display = 'none';
+        refRow.style.display = 'none';
+        cashRow.style.display = 'none';
+        changeRow.style.display = 'none';
+        payButtons.style.display = 'none';
+        preButtons.style.display = 'flex';
+        btnClear.style.display = 'none';
+        document.getElementById('table-select').value = '';
+        document.getElementById('customer-search').focus();
+    } else {
+        btn.textContent = 'Pre-Order: OFF';
+        btn.style.background = '#fff';
+        btn.style.color = '#e67e22';
+        tableRow.style.display = 'flex';
+        customerPanel.style.display = 'none';
+        paymentSection.style.display = 'flex';
+        refRow.style.display = 'none';
+        cashRow.style.display = 'flex';
+        changeRow.style.display = 'flex';
+        payButtons.style.display = 'flex';
+        preButtons.style.display = 'none';
+        btnClear.style.display = 'block';
+        // loadedPreorderId kept until payment completes
+        clearCustomer();
+    }
+}
+
+// ===== CUSTOMER SEARCH =====
+var customerSearchTimeout;
+function searchCustomers() {
+    clearTimeout(customerSearchTimeout);
+    var q = document.getElementById('customer-search').value.trim();
+    var dropdown = document.getElementById('customer-dropdown');
+    if (q.length < 2) { dropdown.style.display = 'none'; return; }
+
+    customerSearchTimeout = setTimeout(function() {
+        var xhr = new XMLHttpRequest();
+        xhr.open('GET', 'api/search_customer.php?q=' + encodeURIComponent(q), true);
+        xhr.onreadystatechange = function() {
+            if (xhr.readyState === 4 && xhr.status === 200) {
+                try {
+                    var list = JSON.parse(xhr.responseText);
+                    dropdown.innerHTML = '';
+                    if (list.length === 0) {
+                        dropdown.innerHTML = '<div class="customer-option"><span style="color:#999;">No customer found</span></div>';
+                    } else {
+                        for (var i = 0; i < list.length; i++) {
+                            var c = list[i];
+                            var div = document.createElement('div');
+                            div.className = 'customer-option';
+                            div.innerHTML = '<div class="c-name">' + escapeHtml(c.name) + '</div><div class="c-phone">' + escapeHtml(c.phone) + '</div>';
+                            div.onclick = (function(customer) { return function() { selectCustomer(customer); }; })(c);
+                            dropdown.appendChild(div);
+                        }
+                    }
+                    dropdown.style.display = 'block';
+                } catch(e) {}
+            }
+        };
+        xhr.send();
+    }, 250);
+}
+
+function handleCustomerKey(e) {
+    if (e.key === 'Escape') {
+        document.getElementById('customer-dropdown').style.display = 'none';
+    }
+}
+
+function selectCustomer(customer) {
+    selectedCustomer = customer;
+    document.getElementById('customer-search').value = '';
+    document.getElementById('customer-dropdown').style.display = 'none';
+    document.getElementById('customer-search-wrap').style.display = 'none';
+    document.getElementById('customer-selected').style.display = 'block';
+    document.getElementById('btn-add-customer').style.display = 'none';
+    document.getElementById('cs-name').textContent = customer.name;
+    document.getElementById('cs-phone').textContent = customer.phone;
+}
+
+function clearCustomer() {
+    selectedCustomer = null;
+    document.getElementById('customer-search-wrap').style.display = 'block';
+    document.getElementById('customer-selected').style.display = 'none';
+    document.getElementById('btn-add-customer').style.display = 'block';
+    document.getElementById('customer-search').focus();
+}
+
+// ===== NEW CUSTOMER MODAL =====
+function openNewCustomerModal() {
+    document.getElementById('nc-name').value = '';
+    document.getElementById('nc-phone').value = '';
+    document.getElementById('nc-address').value = '';
+    document.getElementById('nc-error').style.display = 'none';
+    document.getElementById('nc-modal-overlay').classList.add('show');
+    setTimeout(function() { document.getElementById('nc-name').focus(); }, 100);
+}
+function closeNewCustomerModal() {
+    document.getElementById('nc-modal-overlay').classList.remove('show');
+}
+function saveNewCustomerFromModal() {
+    var name = document.getElementById('nc-name').value.trim();
+    var phone = document.getElementById('nc-phone').value.trim();
+    var address = document.getElementById('nc-address').value.trim();
+    var err = document.getElementById('nc-error');
+
+    if (!name) { err.textContent = 'Please enter customer name.'; err.style.display = 'block'; return; }
+    if (!phone) { err.textContent = 'Please enter customer phone.'; err.style.display = 'block'; return; }
+
+    var xhr = new XMLHttpRequest();
+    xhr.open('POST', 'api/save_customer.php', true);
+    xhr.setRequestHeader('Content-Type', 'application/json');
+    xhr.onreadystatechange = function() {
+        if (xhr.readyState === 4) {
+            try {
+                var res = JSON.parse(xhr.responseText);
+                if (res.success) {
+                    closeNewCustomerModal();
+                    selectCustomer({id: res.id, name: res.name, phone: res.phone});
+                    showToast('Customer added: ' + res.name);
+                } else if (res.id) {
+                    closeNewCustomerModal();
+                    selectCustomer({id: res.id, name: name, phone: phone});
+                    showToast('Customer already exists, selected.', true);
+                } else {
+                    err.textContent = 'Error: ' + (res.error || 'Unknown');
+                    err.style.display = 'block';
+                }
+            } catch(e) {
+                err.textContent = 'Server error. Check XAMPP/MySQL.';
+                err.style.display = 'block';
+            }
+        }
+    };
+    xhr.send(JSON.stringify({name: name, phone: phone, address: address}));
+}
+// Close modal on overlay click
+function handleNcOverlayClick(e) {
+    if (e.target.id === 'nc-modal-overlay') closeNewCustomerModal();
+}
+
+function showNewCustomerModal() {
+    openNewCustomerModal();
+}
+
+function escapeHtml(text) {
+    var div = document.createElement('div');
+    div.textContent = text;
+    return div.innerHTML;
+}
+
+// ===== SAVE PRE-ORDER =====
+function savePreOrder() {
+    if (orderItems.length === 0) return;
+    if (!selectedCustomer) {
+        showToast('Please search and select a customer first', true);
+        document.getElementById('customer-search').focus();
+        return;
+    }
+    var total = calcTotal();
+    var payload = {
+        items: orderItems,
+        total: total,
+        customer_id: selectedCustomer.id,
+        customer_name: selectedCustomer.name,
+        customer_phone: selectedCustomer.phone
+    };
+    showToast('Saving pre-order...');
+    var xhr = new XMLHttpRequest();
+    xhr.open('POST', 'api/save_preorder.php', true);
+    xhr.setRequestHeader('Content-Type', 'application/json');
+    xhr.onreadystatechange = function() {
+        if (xhr.readyState === 4) {
+            try {
+                var res = JSON.parse(xhr.responseText);
+                if (res.success) {
+                    showToast('Pre-order saved: ' + res.invoice_number);
+                    orderItems = [];
+                    loadedPreorderId = null;
+                    clearCustomer();
+                    if (preOrderMode) { preOrderMode = false; togglePreOrderMode(); }
+                    renderOrder();
+                } else {
+                    showToast('Error: ' + (res.error || 'Unknown error'), true);
+                }
+            } catch(e) {
+                showToast('Server error. Check XAMPP/MySQL.', true);
+            }
+        }
+    };
+    xhr.send(JSON.stringify(payload));
+}
+
+function clearOrder() {
+    if (orderItems.length === 0) { renderOrder(); return; }
+    showConfirm('Clear Order', 'Are you sure you want to clear the current order?', 'Yes, Clear', '&#128465;', function() {
+        orderItems = [];
+        clearCustomer();
+        if (preOrderMode) { preOrderMode = false; togglePreOrderMode(); }
+        renderOrder();
+    });
+}
+
 // ===== KEYBOARD SHORTCUTS =====
 document.addEventListener('keydown', function(e) {
     if (e.key === 'F1') {
         e.preventDefault();
-        if (orderItems.length > 0) saveOrder(false);
+        if (orderItems.length > 0) {
+            if (preOrderMode) {
+                savePreOrder();
+            } else {
+                saveOrder(false);
+            }
+        }
     } else if (e.key === 'F2') {
         e.preventDefault();
-        if (orderItems.length > 0) saveOrder(true);
+        if (orderItems.length > 0 && !preOrderMode) {
+            saveOrder(true);
+        }
     }
 });
 
@@ -850,11 +1187,98 @@ document.addEventListener('keydown', function(e) {
         e.preventDefault();
         holdOrder();
     }
+    if (e.key === 'Escape') {
+        if (document.getElementById('nc-modal-overlay').classList.contains('show')) {
+            closeNewCustomerModal();
+        }
+    }
+    if (e.key === 'Enter' && document.getElementById('nc-modal-overlay').classList.contains('show')) {
+        if (document.activeElement.id === 'nc-name' || document.activeElement.id === 'nc-phone' || document.activeElement.id === 'nc-address') {
+            saveNewCustomerFromModal();
+        }
+    }
 });
+
+// ===== LOAD PRE-ORDER FROM URL =====
+var urlParams = new URLSearchParams(window.location.search);
+var loadPreorderId = urlParams.get('load_preorder');
+if (loadPreorderId) {
+    var xhr = new XMLHttpRequest();
+    xhr.open('GET', 'api/get_preorder.php?id=' + encodeURIComponent(loadPreorderId), true);
+    xhr.onreadystatechange = function() {
+        if (xhr.readyState === 4 && xhr.status === 200) {
+            try {
+                var res = JSON.parse(xhr.responseText);
+                if (res.success) {
+                    orderItems = [];
+                    for (var i = 0; i < res.items.length; i++) {
+                        var it = res.items[i];
+                        orderItems.push({
+                            name: it.item_name,
+                            name_ar: it.item_name_ar,
+                            size: it.size,
+                            price: parseFloat(it.price),
+                            qty: parseInt(it.quantity)
+                        });
+                    }
+                    loadedPreorderId = parseInt(loadPreorderId);
+
+                    // Show customer info but stay in normal Pay mode
+                    if (res.invoice.customer_id) {
+                        selectedCustomer = {
+                            id: res.invoice.customer_id,
+                            name: res.invoice.customer_name,
+                            phone: res.invoice.customer_phone
+                        };
+                        document.getElementById('customer-search-wrap').style.display = 'none';
+                        document.getElementById('customer-selected').style.display = 'block';
+                        document.getElementById('btn-add-customer').style.display = 'none';
+                        document.getElementById('cs-name').textContent = res.invoice.customer_name;
+                        document.getElementById('cs-phone').textContent = res.invoice.customer_phone;
+                        document.getElementById('customer-panel').style.display = 'block';
+                    }
+
+                    renderOrder();
+                    showToast('Pre-order loaded. Complete payment to finish.');
+                } else {
+                    showToast('Error loading pre-order: ' + (res.error || ''), true);
+                }
+            } catch(e) {}
+        }
+    };
+    xhr.send();
+}
 
 // ===== INIT =====
 loadMenu();
 loadTables();
 </script>
+
+<!-- NEW CUSTOMER MODAL -->
+<div id="nc-modal-overlay" onclick="handleNcOverlayClick(event)">
+  <div id="nc-modal">
+    <div id="nc-modal-header">&#128203; Add New Customer</div>
+    <div id="nc-modal-body">
+      <div class="nc-field">
+        <label>Customer Name *</label>
+        <input type="text" id="nc-name" placeholder="e.g. Ahmed Mohammed" autocomplete="off">
+      </div>
+      <div class="nc-field">
+        <label>Mobile Number *</label>
+        <input type="text" id="nc-phone" placeholder="e.g. 66680241" autocomplete="off">
+      </div>
+      <div class="nc-field">
+        <label>Address</label>
+        <textarea id="nc-address" rows="2" placeholder="e.g. Block 3, Street 12, Salhiya"></textarea>
+      </div>
+    </div>
+    <div id="nc-error"></div>
+    <div id="nc-modal-footer">
+      <button id="nc-btn-cancel" onclick="closeNewCustomerModal()">Cancel</button>
+      <button id="nc-btn-save" onclick="saveNewCustomerFromModal()">Save Customer</button>
+    </div>
+  </div>
+</div>
+
 </body>
 </html>

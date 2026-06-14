@@ -26,7 +26,7 @@ $table_id     = isset($data['table_id']) ? intval($data['table_id']) : null;
 $table_name   = isset($data['table_name']) ? $data['table_name'] : null;
 $current_user = current_user();
 $user_id      = intval($current_user['id']);
-$user_name    = $current_user['full_name'];
+$user_name    = !empty($current_user['full_name']) ? $current_user['full_name'] : (!empty($current_user['username']) ? $current_user['username'] : 'Unknown');
 
 // Generate invoice number: INV-YYYYMMDD-XXXX
 $invoice_number = 'INV-' . date('Ymd') . '-' . strtoupper(substr(uniqid(), -4));
@@ -38,10 +38,24 @@ try {
     $payment_reference = isset($data['payment_reference']) ? $data['payment_reference'] : null;
     $status = 'paid';
 
-    // If this is a table order, check for an existing OPEN (held) order for that table.
-    // If found, convert that invoice to paid instead of creating a duplicate.
+    // Check for completing a pre-order
+    $preorder_id = isset($data['preorder_id']) ? intval($data['preorder_id']) : 0;
     $invoice_id = null;
-    if ($table_id) {
+
+    if ($preorder_id > 0) {
+        $chk = $conn->prepare("SELECT id, invoice_number FROM invoices WHERE id = ? AND order_type = 'pre_order' AND status = 'open' LIMIT 1");
+        $chk->bind_param('i', $preorder_id);
+        $chk->execute();
+        $open = $chk->get_result()->fetch_assoc();
+        $chk->close();
+        if ($open) {
+            $invoice_id = intval($open['id']);
+            $invoice_number = $open['invoice_number']; // keep original PRE- number
+        }
+    }
+
+    // If this is a table order, check for an existing OPEN (held) order for that table.
+    if (!$invoice_id && $table_id) {
         $chk = $conn->prepare("SELECT id FROM invoices WHERE table_id = ? AND status = 'open' LIMIT 1");
         $chk->bind_param('i', $table_id);
         $chk->execute();
@@ -54,8 +68,8 @@ try {
 
     if ($invoice_id) {
         // Update the existing open invoice -> paid, and replace its items
-        $upd = $conn->prepare("UPDATE invoices SET payment_mode = ?, payment_reference = ?, status = 'paid', total = ?, cash_paid = ?, change_due = ? WHERE id = ?");
-        $upd->bind_param('ssdddi', $payment_mode, $payment_reference, $total, $cash_paid, $change_due, $invoice_id);
+        $upd = $conn->prepare("UPDATE invoices SET payment_mode = ?, payment_reference = ?, status = 'paid', total = ?, cash_paid = ?, change_due = ?, user_name = ? WHERE id = ?");
+        $upd->bind_param('ssdddsi', $payment_mode, $payment_reference, $total, $cash_paid, $change_due, $user_name, $invoice_id);
         $upd->execute();
         $upd->close();
 
