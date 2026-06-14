@@ -1,3 +1,40 @@
+<?php
+require_once 'db/connect.php';
+require_once 'auth.php';
+require_login();
+$company = get_company_settings();
+$id = isset($_GET['id']) ? intval($_GET['id']) : 0;
+$invoice = null;
+$items_list = [];
+
+if ($id > 0) {
+    $extra = is_admin() ? '' : ' AND user_id = ' . intval(current_user()['id']);
+    $inv_res = $conn->query("SELECT * FROM invoices WHERE id = $id $extra");
+    if ($inv_res) $invoice = $inv_res->fetch_assoc();
+
+    if ($invoice) {
+        $items_res = $conn->query("SELECT * FROM invoice_items WHERE invoice_id = $id ORDER BY id");
+        if ($items_res) {
+            while ($row = $items_res->fetch_assoc()) $items_list[] = $row;
+        }
+    }
+}
+
+// An unpaid pre-order: still open and of type pre_order (no payment collected yet)
+$is_unpaid_preorder = $invoice
+    && isset($invoice['order_type']) && $invoice['order_type'] === 'pre_order'
+    && isset($invoice['status']) && $invoice['status'] === 'open';
+
+// For delivery / pre-orders: fetch the customer's address from the customers table
+$customer_address = '';
+if ($invoice && !empty($invoice['customer_id'])) {
+    $cid = intval($invoice['customer_id']);
+    $cres = $conn->query("SELECT address FROM customers WHERE id = $cid LIMIT 1");
+    if ($cres && ($crow = $cres->fetch_assoc())) {
+        $customer_address = $crow['address'];
+    }
+}
+?>
 <!DOCTYPE html>
 <html lang="en">
 <head>
@@ -67,6 +104,15 @@ body { font-family: 'Courier New', Courier, monospace; background:#f0f0f0; displ
 
 .additions-note { background:#f9f9e4; border:1px solid #ddd; padding:6px 8px; text-align:center; font-size:11px; color:#777; margin-top:8px; }
 
+/* ===== DELIVERY DETAILS (pre-orders) ===== */
+.delivery-box { border:2px solid #000; border-radius:4px; padding:8px 10px; margin-bottom:10px; font-size:12px; color:#000; }
+.delivery-title { font-weight:bold; text-align:center; border-bottom:1px dashed #333; padding-bottom:4px; margin-bottom:6px; font-size:12px; }
+.delivery-box .dl-row { padding:3px 0; line-height:1.4; overflow-wrap:anywhere; }
+.delivery-box .dl-label { font-weight:bold; }
+.delivery-box .dl-addr { font-weight:bold; }
+.unpaid-note { text-align:center; font-weight:bold; font-size:14px; color:#000; border:2px solid #000; border-radius:4px; padding:6px; margin-top:8px; letter-spacing:1px; }
+.copy-cut { text-align:center; color:#000; font-size:12px; margin:14px 0; letter-spacing:2px; }
+
 /* ===== PRINT STYLES ===== */
 @media print {
     body { background:#fff; padding:0; margin:0; }
@@ -78,28 +124,6 @@ body { font-family: 'Courier New', Courier, monospace; background:#f0f0f0; displ
 </style>
 </head>
 <body>
-<?php
-require_once 'db/connect.php';
-require_once 'auth.php';
-require_login();
-$company = get_company_settings();
-$id = isset($_GET['id']) ? intval($_GET['id']) : 0;
-$invoice = null;
-$items_list = [];
-
-if ($id > 0) {
-    $extra = is_admin() ? '' : ' AND user_id = ' . intval(current_user()['id']);
-    $inv_res = $conn->query("SELECT * FROM invoices WHERE id = $id $extra");
-    if ($inv_res) $invoice = $inv_res->fetch_assoc();
-
-    if ($invoice) {
-        $items_res = $conn->query("SELECT * FROM invoice_items WHERE invoice_id = $id ORDER BY id");
-        if ($items_res) {
-            while ($row = $items_res->fetch_assoc()) $items_list[] = $row;
-        }
-    }
-}
-?>
 
 <div class="page-wrap">
 
@@ -133,11 +157,28 @@ if ($id > 0) {
       <?php if (!empty($invoice['table_name'])): ?>
       <div><span class="bi-label">Table / <span class="ar">الطاولة</span></span><span><?php echo htmlspecialchars($invoice['table_name']); ?></span></div>
       <?php endif; ?>
+      <?php if (!$is_unpaid_preorder): ?>
       <div><span class="bi-label">Payment / <span class="ar">طريقة الدفع</span></span><span><?php echo htmlspecialchars($invoice['payment_mode'] ?? 'Cash'); ?></span></div>
+      <?php endif; ?>
       <?php if (!empty($invoice['payment_reference'])): ?>
       <div><span class="bi-label">Ref / <span class="ar">المرجع</span></span><span><?php echo htmlspecialchars($invoice['payment_reference']); ?></span></div>
       <?php endif; ?>
     </div>
+
+    <?php if (!empty($invoice['customer_name']) || !empty($invoice['customer_phone']) || $customer_address !== ''): ?>
+    <div class="delivery-box">
+      <div class="delivery-title">&#128666; DELIVERY DETAILS / تفاصيل التوصيل</div>
+      <?php if (!empty($invoice['customer_name'])): ?>
+      <div class="dl-row"><span class="dl-label">Name / الاسم:</span> <?php echo htmlspecialchars($invoice['customer_name']); ?></div>
+      <?php endif; ?>
+      <?php if (!empty($invoice['customer_phone'])): ?>
+      <div class="dl-row"><span class="dl-label">Mobile / الهاتف:</span> <?php echo htmlspecialchars($invoice['customer_phone']); ?></div>
+      <?php endif; ?>
+      <?php if ($customer_address !== ''): ?>
+      <div class="dl-row"><span class="dl-label">Address / العنوان:</span> <span class="dl-addr"><?php echo nl2br(htmlspecialchars($customer_address)); ?></span></div>
+      <?php endif; ?>
+    </div>
+    <?php endif; ?>
 
     <div class="receipt-items">
       <div class="ri-header">
@@ -177,6 +218,7 @@ if ($id > 0) {
         <span>TOTAL / <span class="ar">الإجمالي</span></span>
         <span><?php echo number_format($invoice['total'], 3); ?> KD</span>
       </div>
+      <?php if (!$is_unpaid_preorder): ?>
       <div class="t-row">
         <span>Cash Paid / <span class="ar">المبلغ المدفوع</span></span>
         <span><?php echo number_format($invoice['cash_paid'], 3); ?> KD</span>
@@ -185,6 +227,7 @@ if ($id > 0) {
         <span>Change / <span class="ar">الباقي</span></span>
         <span><?php echo number_format($invoice['change_due'], 3); ?> KD</span>
       </div>
+      <?php endif; ?>
     </div>
 
     <?php else: ?>

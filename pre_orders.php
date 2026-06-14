@@ -87,7 +87,7 @@ td { padding:10px 12px; border-bottom:1px solid #e9ecef; font-size:13px; }
                     <td><?php echo htmlspecialchars($row['customer_name'] ?: 'N/A'); ?></td>
                     <td><?php echo htmlspecialchars($row['customer_phone'] ?: 'N/A'); ?></td>
                     <td class="amount"><?php echo number_format($row['total'], 3); ?> KD</td>
-                    <td><span class="badge <?php echo $row['status'] === 'open' ? 'pending' : 'paid'; ?>"><?php echo htmlspecialchars($row['status'] ?: 'N/A'); ?></span></td>
+                    <td><span class="badge <?php echo $row['status'] === 'open' ? 'pending' : 'paid'; ?>"><?php echo $row['status'] === 'open' ? 'UNPAID' : htmlspecialchars($row['status'] ?: 'N/A'); ?></span></td>
                     <td><?php echo htmlspecialchars(date('d/m/Y H:i', strtotime($row['created_at']))); ?></td>
                     <td><?php echo htmlspecialchars((!empty($row['user_name']) && $row['user_name'] !== '0') ? $row['user_name'] : 'Unknown'); ?></td>
                     <td>
