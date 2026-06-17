@@ -16,7 +16,15 @@ $data = json_decode(file_get_contents('php://input'), true);
 $invoice_id = intval($data['invoice_id']);
 
 $whereUser = is_admin() ? '' : ' AND user_id = ' . intval(current_user()['id']);
-$conn->query("UPDATE invoices SET status = 'cancelled' WHERE id = $invoice_id AND order_type = 'pre_order' AND status = 'open' $whereUser");
+$sql = "UPDATE invoices SET status = 'cancelled' WHERE id = $invoice_id AND order_type = 'pre_order' AND status = 'open' $whereUser";
+
+if (!$conn->query($sql)) {
+    $err = $conn->error;
+    error_log("[cancel_preorder] SQL Error: $err | SQL: $sql");
+    echo json_encode(['error' => 'Database error: ' . $err]);
+    $conn->close();
+    exit;
+}
 
 if ($conn->affected_rows > 0) {
     echo json_encode(['success' => true]);
