@@ -47,6 +47,14 @@ if ($res->num_rows === 0) {
     $fixes[] = 'Added idx_phone on customers.phone';
 }
 
+// 7. status enum must include 'cancelled' (required to cancel pre-orders)
+$res = $conn->query("SHOW COLUMNS FROM invoices LIKE 'status'");
+$col = $res->fetch_assoc();
+if ($col && strpos($col['Type'], "'cancelled'") === false) {
+    $conn->query("ALTER TABLE invoices MODIFY COLUMN status ENUM('open','paid','cancelled') DEFAULT 'open'");
+    $fixes[] = "Added 'cancelled' to invoices.status enum";
+}
+
 echo count($fixes) ? implode("\n", $fixes) : 'No schema changes needed — everything is up to date.';
 
 $conn->close();
