@@ -27,6 +27,8 @@ html, body { height:100%; font-family: Tahoma, Arial, sans-serif; background:#f5
     box-shadow:0 2px 8px rgba(0,0,0,0.1);
     flex-shrink:0;
 }
+#header .header-left { display:flex; align-items:center; gap:12px; }
+#header .logo-img { height:40px; width:auto; object-fit:contain; }
 #header h1 { font-size:18px; letter-spacing:1px; }
 #header .subtitle { font-size:11px; opacity:0.9; }
 #header .nav-links a {
@@ -269,9 +271,14 @@ html, body { height:100%; font-family: Tahoma, Arial, sans-serif; background:#f5
 
   <!-- HEADER -->
   <div id="header">
-    <div>
-      <div class="subtitle">Point of Sale System</div>
-      <h1>&#127828; <?php echo htmlspecialchars($company['company_name_en']); ?> &nbsp; | &nbsp; <span style="color:#d1e3fc;"><?php echo htmlspecialchars($company['company_name_ar']); ?></span></h1>
+    <div class="header-left">
+      <?php if ($company['logo_path']): ?>
+        <img src="<?php echo htmlspecialchars($company['logo_path']); ?>" class="logo-img" alt="Logo">
+      <?php endif; ?>
+      <div>
+        <div class="subtitle">Point of Sale System</div>
+        <h1>&#127828; <?php echo htmlspecialchars($company['company_name_en']); ?> &nbsp; | &nbsp; <span style="color:#d1e3fc;"><?php echo htmlspecialchars($company['company_name_ar']); ?></span></h1>
+      </div>
     </div>
     <div class="nav-links">
       <span style="font-size:12px;margin-right:8px;">User: <?php echo htmlspecialchars($currentUser['full_name']); ?></span>

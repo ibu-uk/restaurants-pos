@@ -136,7 +136,7 @@ body { font-family: 'Courier New', Courier, monospace; background:#f0f0f0; displ
   <div class="receipt">
 
     <div class="receipt-header">
-      <?php if ($company['logo_path']): ?>
+      <?php if ($company['logo_path'] && intval($company['logo_on_receipt'] ?? 1) === 1): ?>
         <img src="<?php echo htmlspecialchars($company['logo_path']); ?>" alt="Logo" style="max-width:80px; max-height:50px; margin-bottom:8px;">
       <?php endif; ?>
       <div class="logo"><?php echo htmlspecialchars($company['company_name_en']); ?></div>

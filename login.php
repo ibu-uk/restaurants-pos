@@ -52,6 +52,8 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
 * { box-sizing:border-box; margin:0; padding:0; }
 body { min-height:100vh; display:flex; align-items:center; justify-content:center; background:#f5f7fa; color:#2c3e50; font-family:Tahoma,Arial,sans-serif; }
 .login-box { width:360px; background:#fff; border:1px solid #dee2e6; border-radius:14px; padding:26px; box-shadow:0 4px 20px rgba(0,0,0,0.08); }
+.logo-container { text-align:center; margin-bottom:16px; }
+.logo-img { max-height:60px; width:auto; object-fit:contain; }
 h1 { text-align:center; color:#2c3e50; font-size:22px; margin-bottom:4px; }
 .subtitle { text-align:center; color:#e67e22; margin-bottom:22px; font-size:13px; }
 label { display:block; color:#495057; font-size:12px; margin-bottom:6px; }
@@ -65,6 +67,11 @@ button:hover { background:linear-gradient(135deg,#7aa0e8,#6a90d8); }
 </head>
 <body>
 <form class="login-box" method="post">
+  <?php if ($company['logo_path']): ?>
+    <div class="logo-container">
+      <img src="<?php echo htmlspecialchars($company['logo_path']); ?>" class="logo-img" alt="Logo">
+    </div>
+  <?php endif; ?>
   <h1><?php echo htmlspecialchars($company['company_name_en']); ?></h1>
   <div class="subtitle">Staff Login / دخول الموظفين</div>
   <?php if ($error): ?><div class="error"><?php echo htmlspecialchars($error); ?></div><?php endif; ?>

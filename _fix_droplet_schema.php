@@ -55,6 +55,13 @@ if ($col && strpos($col['Type'], "'cancelled'") === false) {
     $fixes[] = "Added 'cancelled' to invoices.status enum";
 }
 
+// 8. logo_on_receipt column in company_settings (for receipt logo toggle)
+$res = $conn->query("SHOW COLUMNS FROM company_settings LIKE 'logo_on_receipt'");
+if ($res->num_rows === 0) {
+    $conn->query("ALTER TABLE company_settings ADD COLUMN logo_on_receipt TINYINT(1) DEFAULT 1 AFTER invoice_footer");
+    $fixes[] = "Added logo_on_receipt column to company_settings";
+}
+
 echo count($fixes) ? implode("\n", $fixes) : 'No schema changes needed — everything is up to date.';
 
 $conn->close();

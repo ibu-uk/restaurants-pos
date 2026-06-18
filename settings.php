@@ -11,13 +11,25 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['action']) && $_POST['
     $phone = trim($_POST['phone'] ?? '');
     $email = trim($_POST['email'] ?? '');
     $invoice_footer = trim($_POST['invoice_footer'] ?? '');
+    $logo_on_receipt = isset($_POST['logo_on_receipt']) ? 1 : 0;
     
-    // Handle logo upload
+    // Handle logo upload or removal
     $logo_path = $_POST['existing_logo'] ?? '';
-    if (isset($_FILES['logo']) && $_FILES['logo']['error'] === UPLOAD_ERR_OK) {
+    if (isset($_POST['remove_logo']) && $_POST['remove_logo'] === '1') {
+        // Delete existing logo file
+        if ($logo_path && file_exists($logo_path)) {
+            unlink($logo_path);
+        }
+        $logo_path = '';
+    } elseif (isset($_FILES['logo']) && $_FILES['logo']['error'] === UPLOAD_ERR_OK) {
+        // Upload new logo
         $allowed = ['jpg', 'jpeg', 'png', 'gif'];
         $ext = strtolower(pathinfo($_FILES['logo']['name'], PATHINFO_EXTENSION));
         if (in_array($ext, $allowed) && $_FILES['logo']['size'] <= 2097152) {
+            // Delete old logo file if exists
+            if ($logo_path && file_exists($logo_path)) {
+                unlink($logo_path);
+            }
             $new_name = 'company_logo.' . $ext;
             move_uploaded_file($_FILES['logo']['tmp_name'], 'uploads/' . $new_name);
             $logo_path = 'uploads/' . $new_name;
@@ -28,11 +40,11 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['action']) && $_POST['
     $exists = $conn->query("SELECT id FROM company_settings WHERE id = 1")->fetch_assoc();
     
     if ($exists) {
-        $stmt = $conn->prepare("UPDATE company_settings SET company_name_en = ?, company_name_ar = ?, address = ?, phone = ?, email = ?, logo_path = ?, invoice_footer = ? WHERE id = 1");
-        $stmt->bind_param('sssssss', $company_name_en, $company_name_ar, $address, $phone, $email, $logo_path, $invoice_footer);
+        $stmt = $conn->prepare("UPDATE company_settings SET company_name_en = ?, company_name_ar = ?, address = ?, phone = ?, email = ?, logo_path = ?, invoice_footer = ?, logo_on_receipt = ? WHERE id = 1");
+        $stmt->bind_param('sssssssi', $company_name_en, $company_name_ar, $address, $phone, $email, $logo_path, $invoice_footer, $logo_on_receipt);
     } else {
-        $stmt = $conn->prepare("INSERT INTO company_settings (id, company_name_en, company_name_ar, address, phone, email, logo_path, invoice_footer) VALUES (1, ?, ?, ?, ?, ?, ?, ?)");
-        $stmt->bind_param('sssssss', $company_name_en, $company_name_ar, $address, $phone, $email, $logo_path, $invoice_footer);
+        $stmt = $conn->prepare("INSERT INTO company_settings (id, company_name_en, company_name_ar, address, phone, email, logo_path, invoice_footer, logo_on_receipt) VALUES (1, ?, ?, ?, ?, ?, ?, ?, ?)");
+        $stmt->bind_param('sssssssi', $company_name_en, $company_name_ar, $address, $phone, $email, $logo_path, $invoice_footer, $logo_on_receipt);
     }
     $stmt->execute();
     if ($stmt->error) {
@@ -55,7 +67,8 @@ if (!$company) {
         'phone' => '',
         'email' => '',
         'logo_path' => '',
-        'invoice_footer' => 'Thank you for your visit!'
+        'invoice_footer' => 'Thank you for your visit!',
+        'logo_on_receipt' => 1
     ];
 }
 ?>
@@ -256,6 +269,16 @@ tbody td { padding:10px 14px; font-size:13px; }
           <input type="file" name="logo" accept="image/*">
           <?php if ($company['logo_path']): ?>
             <img src="<?php echo htmlspecialchars($company['logo_path']); ?>" class="logo-preview" alt="Logo">
+            <div style="margin-top:8px;">
+              <label style="font-size:12px;color:#7f8c8d;font-weight:normal;">
+                <input type="checkbox" name="remove_logo" value="1"> Remove current logo
+              </label>
+            </div>
+            <div style="margin-top:6px;">
+              <label style="font-size:12px;color:#7f8c8d;font-weight:normal;">
+                <input type="checkbox" name="logo_on_receipt" value="1" <?php echo (intval($company['logo_on_receipt'] ?? 1) === 1) ? 'checked' : ''; ?>> Show logo on receipt
+              </label>
+            </div>
           <?php endif; ?>
         </div>
       </div>
