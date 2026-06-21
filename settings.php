@@ -21,18 +21,28 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['action']) && $_POST['
             unlink($logo_path);
         }
         $logo_path = '';
-    } elseif (isset($_FILES['logo']) && $_FILES['logo']['error'] === UPLOAD_ERR_OK) {
-        // Upload new logo
-        $allowed = ['jpg', 'jpeg', 'png', 'gif'];
-        $ext = strtolower(pathinfo($_FILES['logo']['name'], PATHINFO_EXTENSION));
-        if (in_array($ext, $allowed) && $_FILES['logo']['size'] <= 2097152) {
-            // Delete old logo file if exists
-            if ($logo_path && file_exists($logo_path)) {
-                unlink($logo_path);
+    } elseif (isset($_FILES['logo'])) {
+        error_log("[settings] Logo upload attempt: error=" . $_FILES['logo']['error'] . ", size=" . $_FILES['logo']['size'] . ", name=" . $_FILES['logo']['name']);
+        if ($_FILES['logo']['error'] === UPLOAD_ERR_OK) {
+            $allowed = ['jpg', 'jpeg', 'png', 'gif'];
+            $ext = strtolower(pathinfo($_FILES['logo']['name'], PATHINFO_EXTENSION));
+            error_log("[settings] File extension: $ext, allowed: " . implode(',', $allowed));
+            if (in_array($ext, $allowed) && $_FILES['logo']['size'] <= 2097152) {
+                // Delete old logo file if exists
+                if ($logo_path && file_exists($logo_path)) {
+                    unlink($logo_path);
+                }
+                $new_name = 'company_logo.' . $ext;
+                $moved = move_uploaded_file($_FILES['logo']['tmp_name'], 'uploads/' . $new_name);
+                error_log("[settings] move_uploaded_file result: " . ($moved ? 'success' : 'failed'));
+                if ($moved) {
+                    $logo_path = 'uploads/' . $new_name;
+                }
+            } else {
+                error_log("[settings] File rejected: extension or size issue");
             }
-            $new_name = 'company_logo.' . $ext;
-            move_uploaded_file($_FILES['logo']['tmp_name'], 'uploads/' . $new_name);
-            $logo_path = 'uploads/' . $new_name;
+        } else {
+            error_log("[settings] Upload error code: " . $_FILES['logo']['error']);
         }
     }
     
