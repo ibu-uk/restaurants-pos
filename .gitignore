@@ -1,0 +1,15 @@
+# Logs
+*.log
+refund_errors.log
+
+# Uploads
+uploads/*
+!uploads/.gitkeep
+
+# IDE
+.vscode/
+.idea/
+
+# OS
+.DS_Store
+Thumbs.db

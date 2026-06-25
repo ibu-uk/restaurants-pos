@@ -63,6 +63,7 @@ $invoices = [];
 while ($row = $result->fetch_assoc()) $invoices[] = $row;
 
 $today_summary = $conn->query("SELECT COUNT(*) as c, COALESCE(SUM(total), 0) as revenue FROM invoices WHERE DATE(created_at) = CURDATE()")->fetch_assoc();
+$refund_summary = $conn->query("SELECT COUNT(*) as c, COALESCE(SUM(ABS(total)), 0) as refund_total FROM invoices WHERE payment_mode = 'Refund'")->fetch_assoc();
 $user_summary = $conn->query("SELECT COALESCE(user_name, 'Unknown') as user_name, COUNT(*) as invoice_count, COALESCE(SUM(total), 0) as total_sales FROM invoices $where_sql GROUP BY user_id, user_name ORDER BY total_sales DESC")->fetch_all(MYSQLI_ASSOC);
 $users = [];
 if (is_admin()) {
@@ -76,6 +77,8 @@ echo json_encode([
     'revenue'     => floatval($summary['revenue']),
     'today_total' => intval($today_summary['c']),
     'today_revenue' => floatval($today_summary['revenue']),
+    'refund_count' => intval($refund_summary['c']),
+    'refund_total' => floatval($refund_summary['refund_total']),
     'user_summary' => $user_summary,
     'users'       => $users,
     'page'        => $page,

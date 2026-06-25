@@ -214,6 +214,18 @@ body { font-family: 'Courier New', Courier, monospace; background:#f0f0f0; displ
     </div>
 
     <div class="receipt-totals">
+      <?php if (isset($invoice['subtotal']) && floatval($invoice['subtotal']) > 0): ?>
+      <div class="t-row">
+        <span>Subtotal / <span class="ar">المجموع الفرعي</span></span>
+        <span><?php echo number_format($invoice['subtotal'], 3); ?> KD</span>
+      </div>
+      <?php endif; ?>
+      <?php if (isset($invoice['discount']) && floatval($invoice['discount']) > 0): ?>
+      <div class="t-row" style="color:#e74c3c;">
+        <span>Discount / <span class="ar">خصم</span></span>
+        <span>-<?php echo number_format($invoice['discount'], 3); ?> KD</span>
+      </div>
+      <?php endif; ?>
       <div class="t-row grand">
         <span>TOTAL / <span class="ar">الإجمالي</span></span>
         <span><?php echo number_format($invoice['total'], 3); ?> KD</span>

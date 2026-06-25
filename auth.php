@@ -46,6 +46,11 @@ function is_admin() {
     return $user && isset($user['role']) && $user['role'] === 'admin';
 }
 
+function is_staff() {
+    $user = current_user();
+    return $user && isset($user['role']) && $user['role'] === 'staff';
+}
+
 function require_login() {
     if (!is_logged_in()) {
         header('Location: login.php');

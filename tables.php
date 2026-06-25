@@ -184,7 +184,7 @@ html, body { min-height:100%; font-family:Tahoma,Arial,sans-serif; background:#f
         <a href="index.php">&#128203; POS</a>
         <a href="dashboard.php">&#128200; Dashboard</a>
         <a href="invoices.php">&#128196; Invoices</a>
-        <?php if (is_admin()): ?><a href="settings.php">&#9881; Settings</a><?php endif; ?>
+        <?php if (is_admin() || is_staff()): ?><a href="settings.php">&#9881; Settings</a><?php endif; ?>
     </div>
 </div>
 

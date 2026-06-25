@@ -1,6 +1,6 @@
 <?php
 require_once 'auth.php';
-require_admin();
+require_login();
 require_once 'db/connect.php';
 
 // Handle company settings save
@@ -21,28 +21,18 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['action']) && $_POST['
             unlink($logo_path);
         }
         $logo_path = '';
-    } elseif (isset($_FILES['logo'])) {
-        error_log("[settings] Logo upload attempt: error=" . $_FILES['logo']['error'] . ", size=" . $_FILES['logo']['size'] . ", name=" . $_FILES['logo']['name']);
-        if ($_FILES['logo']['error'] === UPLOAD_ERR_OK) {
-            $allowed = ['jpg', 'jpeg', 'png', 'gif'];
-            $ext = strtolower(pathinfo($_FILES['logo']['name'], PATHINFO_EXTENSION));
-            error_log("[settings] File extension: $ext, allowed: " . implode(',', $allowed));
-            if (in_array($ext, $allowed) && $_FILES['logo']['size'] <= 2097152) {
-                // Delete old logo file if exists
-                if ($logo_path && file_exists($logo_path)) {
-                    unlink($logo_path);
-                }
-                $new_name = 'company_logo.' . $ext;
-                $moved = move_uploaded_file($_FILES['logo']['tmp_name'], 'uploads/' . $new_name);
-                error_log("[settings] move_uploaded_file result: " . ($moved ? 'success' : 'failed'));
-                if ($moved) {
-                    $logo_path = 'uploads/' . $new_name;
-                }
-            } else {
-                error_log("[settings] File rejected: extension or size issue");
+    } elseif (isset($_FILES['logo']) && $_FILES['logo']['error'] === UPLOAD_ERR_OK) {
+        // Upload new logo
+        $allowed = ['jpg', 'jpeg', 'png', 'gif'];
+        $ext = strtolower(pathinfo($_FILES['logo']['name'], PATHINFO_EXTENSION));
+        if (in_array($ext, $allowed) && $_FILES['logo']['size'] <= 2097152) {
+            // Delete old logo file if exists
+            if ($logo_path && file_exists($logo_path)) {
+                unlink($logo_path);
             }
-        } else {
-            error_log("[settings] Upload error code: " . $_FILES['logo']['error']);
+            $new_name = 'company_logo.' . $ext;
+            move_uploaded_file($_FILES['logo']['tmp_name'], 'uploads/' . $new_name);
+            $logo_path = 'uploads/' . $new_name;
         }
     }
     
@@ -233,7 +223,7 @@ tbody td { padding:10px 14px; font-size:13px; }
 <div id="header">
   <h1>&#9881; Settings</h1>
   <div>
-    <a href="users.php">&#128101; Users</a>
+    <?php if (is_admin()): ?><a href="users.php">&#128101; Users</a><?php endif; ?>
     <a href="index.php">&#8592; Back to POS</a>
     <a href="logout.php" onclick="showConfirm('Logout','Are you sure you want to logout?','Yes, Logout','\uD83D\uDEAA',function(){ window.location.href='logout.php'; }); return false;">Logout</a>
   </div>
@@ -243,7 +233,8 @@ tbody td { padding:10px 14px; font-size:13px; }
     <div class="info-box" style="background:#d4edda; color:#155724; border-color:#c3e6cb;">&#10004; Company settings saved successfully!</div>
   <?php endif; ?>
 
-  <!-- Company Profile Section -->
+  <?php if (is_admin()): ?>
+  <!-- Company Profile Section (Admin Only) -->
   <div class="company-section">
     <h2>&#127970; Company Profile</h2>
     <form method="post" enctype="multipart/form-data">
@@ -301,6 +292,7 @@ tbody td { padding:10px 14px; font-size:13px; }
       <button type="submit" class="save-btn" style="margin-top:14px; padding:10px 24px; font-size:14px;">Save Company Profile</button>
     </form>
   </div>
+  <?php endif; ?>
 
   <!-- Menu Settings Section -->
   <div class="add-box">
@@ -442,11 +434,11 @@ function renderCategorySection(cat, level) {
             } else if (hasSizes) {
                 // Single price item inside a mixed (size) category - span across the 3 size columns
                 html += '<td colspan="3"><input class="price-input" type="number" step="0.001" min="0" value="' + parseFloat(item.price).toFixed(3) + '" id="p_' + item.id + '"></td>';
-                html += '<td style="white-space:nowrap"><button class="save-btn" id="sbtn-' + item.id + '" onclick="saveItem(' + item.id + ')">Save</button> <button class="del-btn" onclick="deleteItem(' + item.id + ', \'' + esc(item.name_en) + '\')" title="Delete Item">&#128465;</button></td>';
+                html += '<td style="white-space:nowrap"><button class="save-btn" id="sbtn-' + item.id + '" onclick="saveItem(' + item.id + ')">Save</button> <button class="save-btn" style="background:#e67e22;" onclick="convertToSizeBased(' + item.id + ', ' + parseFloat(item.price).toFixed(3) + ')">Convert to Size-based</button> <button class="del-btn" onclick="deleteItem(' + item.id + ', \'' + esc(item.name_en) + '\')" title="Delete Item">&#128465;</button></td>';
             } else {
                 // Single price
                 html += '<td><input class="price-input" type="number" step="0.001" min="0" value="' + parseFloat(item.price).toFixed(3) + '" id="p_' + item.id + '"></td>';
-                html += '<td style="white-space:nowrap"><button class="save-btn" id="sbtn-' + item.id + '" onclick="saveItem(' + item.id + ')">Save</button> <button class="del-btn" onclick="deleteItem(' + item.id + ', \'' + esc(item.name_en) + '\')" title="Delete Item">&#128465;</button></td>';
+                html += '<td style="white-space:nowrap"><button class="save-btn" id="sbtn-' + item.id + '" onclick="saveItem(' + item.id + ')">Save</button> <button class="save-btn" style="background:#e67e22;" onclick="convertToSizeBased(' + item.id + ', ' + parseFloat(item.price).toFixed(3) + ')">Convert to Size-based</button> <button class="del-btn" onclick="deleteItem(' + item.id + ', \'' + esc(item.name_en) + '\')" title="Delete Item">&#128465;</button></td>';
             }
             html += '</tr>';
         }
@@ -637,6 +629,25 @@ function saveSizePrices(id) {
             showToast('Failed to save item', true);
         }
         setTimeout(function() { btn.textContent = 'Save'; btn.className = 'save-btn'; btn.disabled = false; }, 1500);
+    });
+}
+
+function convertToSizeBased(id, basePrice) {
+    var msg = 'Convert this item to size-based pricing?<br><br>' +
+              '<strong>Small:</strong> ' + (basePrice * 0.85).toFixed(3) + ' KD (15% less)<br>' +
+              '<strong>Medium:</strong> ' + basePrice.toFixed(3) + ' KD (same as original)<br>' +
+              '<strong>Large:</strong> ' + (basePrice * 1.15).toFixed(3) + ' KD (15% more)<br><br>' +
+              'You can edit these prices after conversion.';
+
+    showConfirm('Convert to Size-based', msg, 'Yes, Convert', function() {
+        sendUpdate({action: 'convert_to_size_based', id: id, base_price: basePrice}, function(ok) {
+            if (ok) {
+                showToast('Item converted to size-based pricing!');
+                loadMenu();
+            } else {
+                showToast('Failed to convert item', true);
+            }
+        });
     });
 }
 

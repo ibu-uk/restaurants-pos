@@ -286,7 +286,7 @@ html, body { height:100%; font-family: Tahoma, Arial, sans-serif; background:#f5
       <a href="invoices.php">&#128196; Invoices</a>
       <a href="tables.php">&#127860; Tables</a>
       <a href="pre_orders.php">&#128203; Pre-Orders</a>
-      <?php if (is_admin()): ?><a href="settings.php">&#9881; Settings</a><?php endif; ?>
+      <?php if (is_admin() || is_staff()): ?><a href="settings.php">&#9881; Settings</a><?php endif; ?>
       <?php if (is_admin()): ?><a href="users.php">&#128101; Users</a><?php endif; ?>
       <a href="logout.php" onclick="showConfirm('Logout','Are you sure you want to logout?','Yes, Logout','\uD83D\uDEAA',function(){ window.location.href='logout.php'; }); return false;">Logout</a>
     </div>
@@ -345,6 +345,14 @@ html, body { height:100%; font-family: Tahoma, Arial, sans-serif; background:#f5
       </div>
 
       <div id="order-footer">
+        <div class="total-row">
+          <span>Subtotal</span>
+          <span id="subtotal-display">0.000 KD</span>
+        </div>
+        <div class="total-row">
+          <span>Discount</span>
+          <input type="number" id="discount-input" step="0.001" min="0" value="" style="width:80px;text-align:right;padding:4px 6px;border:1px solid #ced4da;border-radius:4px;font-size:13px;">
+        </div>
         <div class="total-row grand">
           <span>TOTAL</span>
           <span id="total-display">0.000 KD</span>
@@ -376,6 +384,7 @@ html, body { height:100%; font-family: Tahoma, Arial, sans-serif; background:#f5
           <button onclick="if(orderItems.length>0)saveOrder(false)" style="flex:1;padding:12px 6px;background:linear-gradient(135deg,#2980b9,#1a5276);color:#fff;border:none;border-radius:8px;font-size:14px;font-weight:bold;cursor:pointer;font-family:Tahoma,Arial,sans-serif;">F1<br><span style="font-size:10px;font-weight:normal;">Pay</span></button>
           <button onclick="if(orderItems.length>0)saveOrder(true)" style="flex:1;padding:12px 6px;background:linear-gradient(135deg,#27ae60,#1e8449);color:#fff;border:none;border-radius:8px;font-size:14px;font-weight:bold;cursor:pointer;font-family:Tahoma,Arial,sans-serif;">F2<br><span style="font-size:10px;font-weight:normal;">Pay &amp; Print</span></button>
           <button onclick="holdOrder()" id="btn-hold" style="flex:1;padding:12px 6px;background:linear-gradient(135deg,#e67e22,#d35400);color:#fff;border:none;border-radius:8px;font-size:14px;font-weight:bold;cursor:pointer;font-family:Tahoma,Arial,sans-serif;">F3<br><span style="font-size:10px;font-weight:normal;">Hold</span></button>
+          <button onclick="if(orderItems.length>0)previewBill()" style="flex:1;padding:12px 6px;background:linear-gradient(135deg,#9b59b6,#8e44ad);color:#fff;border:none;border-radius:8px;font-size:14px;font-weight:bold;cursor:pointer;font-family:Tahoma,Arial,sans-serif;">F4<br><span style="font-size:10px;font-weight:normal;">Preview</span></button>
         </div>
 
         <!-- PRE-ORDER BUTTONS -->
@@ -603,7 +612,7 @@ function openSizeModal(item) {
     var html = '';
     for (var i = 0; i < sizes.length; i++) {
         var s = sizes[i];
-        if (s.price === null) continue;
+        if (s.price === null || parseFloat(s.price) <= 0) continue;
         html += '<button class="size-btn" onclick="addWithSize(\'' + s.label + '\', ' + s.price + ')">';
         html += '<span class="sz-label">' + s.label + '</span>';
         html += '<span class="sz-price">' + parseFloat(s.price).toFixed(3) + ' KD</span>';
@@ -653,6 +662,7 @@ function renderOrder() {
     var container = document.getElementById('order-items');
     if (orderItems.length === 0) {
         container.innerHTML = '<div id="empty-order">&#128203;<br>No items added yet.<br>Click menu items to add.</div>';
+        document.getElementById('subtotal-display').textContent = '0.000 KD';
         document.getElementById('total-display').textContent = '0.000 KD';
         document.getElementById('change-display').textContent = '0.000 KD';
         document.getElementById('order-count').textContent = '0 items';
@@ -682,11 +692,20 @@ function renderOrder() {
     }
 
     container.innerHTML = html;
-    document.getElementById('total-display').textContent = total.toFixed(3) + ' KD';
+    var subtotal = total;
+    var discountVal = document.getElementById('discount-input').value;
+    var discount = (discountVal === '' || discountVal === null) ? 0 : parseFloat(discountVal);
+    if (isNaN(discount)) discount = 0;
+    if (discount < 0) discount = 0;
+    if (discount > subtotal) discount = subtotal;
+    var finalTotal = subtotal - discount;
+
+    document.getElementById('subtotal-display').textContent = subtotal.toFixed(3) + ' KD';
+    document.getElementById('total-display').textContent = finalTotal.toFixed(3) + ' KD';
     document.getElementById('order-count').textContent = totalQty + (totalQty === 1 ? ' item' : ' items');
     var pmode = document.getElementById('payment-mode').value;
     if (pmode === 'Talabat' || pmode === 'Keeta') {
-        document.getElementById('cash-input').value = total.toFixed(3);
+        document.getElementById('cash-input').value = finalTotal.toFixed(3);
     }
     updateChange();
 }
@@ -703,6 +722,11 @@ function removeItem(index) {
     orderItems.splice(index, 1);
     renderOrder();
 }
+
+// ===== DISCOUNT INPUT HANDLER =====
+document.getElementById('discount-input').addEventListener('input', function() {
+    renderOrder();
+});
 
 // ===== PAYMENT MODE HANDLER =====
 document.getElementById('payment-mode').addEventListener('change', function() {
@@ -745,16 +769,54 @@ function updateChange() {
         el.style.color = '#2ecc71';
     }
 }
-function calcTotal() {
+function calcSubtotal() {
     var t = 0;
     for (var i = 0; i < orderItems.length; i++) t += orderItems[i].price * orderItems[i].qty;
     return t;
+}
+function calcTotal() {
+    var subtotal = calcSubtotal();
+    var discountVal = document.getElementById('discount-input').value;
+    var discount = (discountVal === '' || discountVal === null) ? 0 : parseFloat(discountVal);
+    if (isNaN(discount)) discount = 0;
+    if (discount < 0) discount = 0;
+    if (discount > subtotal) discount = subtotal;
+    return subtotal - discount;
+}
+
+// ===== PREVIEW BILL =====
+function previewBill() {
+    if (orderItems.length === 0) return;
+    var subtotal = calcSubtotal();
+    var discountVal = document.getElementById('discount-input').value;
+    var discount = (discountVal === '' || discountVal === null) ? 0 : parseFloat(discountVal);
+    if (isNaN(discount)) discount = 0;
+    if (discount < 0) discount = 0;
+    if (discount > subtotal) discount = subtotal;
+    var total = subtotal - discount;
+
+    var tableId = document.getElementById('table-select').value;
+    var tableSel = document.getElementById('table-select');
+    var tableName = tableId ? tableSel.options[tableSel.selectedIndex].getAttribute('data-name') : '';
+
+    var url = 'preview_bill.php?items=' + encodeURIComponent(JSON.stringify(orderItems)) +
+              '&subtotal=' + subtotal +
+              '&discount=' + discount +
+              '&total=' + total +
+              '&table_name=' + encodeURIComponent(tableName);
+    window.open(url, '_blank', 'width=400,height=600');
 }
 
 // ===== CHECKOUT =====
 function saveOrder(printReceipt) {
     if (orderItems.length === 0) return;
-    var total          = calcTotal();
+    var subtotal       = calcSubtotal();
+    var discountVal    = document.getElementById('discount-input').value;
+    var discount       = (discountVal === '' || discountVal === null) ? 0 : parseFloat(discountVal);
+    if (isNaN(discount)) discount = 0;
+    if (discount < 0) discount = 0;
+    if (discount > subtotal) discount = subtotal;
+    var total          = subtotal - discount;
     var paymentMode    = document.getElementById('payment-mode').value;
     var cashInputValue = document.getElementById('cash-input').value.trim();
     var cashPaid       = cashInputValue === '' ? total : parseFloat(cashInputValue);
@@ -770,6 +832,8 @@ function saveOrder(printReceipt) {
 
     var payload = {
         items:             orderItems,
+        subtotal:          subtotal,
+        discount:          discount,
         total:             total,
         payment_mode:      paymentMode,
         payment_reference: paymentRef,

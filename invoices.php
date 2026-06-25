@@ -151,6 +151,7 @@ tbody td.change-td { color:#27ae60; }
     <div class="summary-card"><div class="val" id="s-filter-revenue">-</div><div class="lbl">Filtered Revenue (KD)</div></div>
     <div class="summary-card"><div class="val" id="s-today">-</div><div class="lbl">Today's Invoices</div></div>
     <div class="summary-card"><div class="val" id="s-revenue">-</div><div class="lbl">Today's Revenue (KD)</div></div>
+    <div class="summary-card" style="border-left:3px solid #e74c3c;"><div class="val" id="s-refunds" style="color:#e74c3c;">-</div><div class="lbl">Refunds (KD)</div></div>
   </div>
 
   <div class="search-bar">
@@ -217,6 +218,28 @@ tbody td.change-td { color:#27ae60; }
   </div>
 </div>
 
+<!-- Refund Modal -->
+<div id="refund-overlay" style="display:none;position:fixed;top:0;left:0;right:0;bottom:0;background:rgba(0,0,0,0.5);z-index:1000;align-items:center;justify-content:center;">
+  <div id="refund-box" style="background:#fff;border:1px solid #dee2e6;border-radius:10px;padding:24px;max-width:600px;width:95%;max-height:80vh;overflow-y:auto;box-shadow:0 10px 40px rgba(0,0,0,0.2);">
+    <h3 style="color:#e67e22;margin-bottom:12px;">Process Return / Refund</h3>
+    <div id="refund-invoice-info" style="margin-bottom:12px;font-size:13px;color:#495057;"></div>
+    <div id="refund-items-container" style="margin-bottom:14px;"></div>
+    <div style="margin-bottom:14px;">
+      <label style="font-weight:bold;font-size:13px;">Refund Reason:</label>
+      <select id="refund-reason" style="width:100%;padding:8px;border:1px solid #ced4da;border-radius:4px;margin-top:4px;">
+        <option value="customer_changed_mind">Customer changed mind</option>
+        <option value="wrong_item">Wrong item delivered</option>
+        <option value="quality_issue">Quality issue</option>
+        <option value="other">Other</option>
+      </select>
+    </div>
+    <div class="detail-btns">
+      <button class="btn-view" style="background:#e67e22" onclick="processRefund()">&#8634; Process Refund</button>
+      <button class="btn-close" onclick="closeRefundModal()">Cancel</button>
+    </div>
+  </div>
+</div>
+
 <script>
 var allInvoices = [];
 var currentPage = 1;
@@ -252,6 +275,7 @@ function loadInvoices(page) {
             document.getElementById('s-filter-revenue').textContent = parseFloat(data.revenue || 0).toFixed(3);
             document.getElementById('s-today').textContent = data.today_total || 0;
             document.getElementById('s-revenue').textContent = parseFloat(data.today_revenue || 0).toFixed(3);
+            document.getElementById('s-refunds').textContent = parseFloat(data.refund_total || 0).toFixed(3);
             renderUserFilter(data.users || []);
             renderUserSummary(data.user_summary || []);
             // Update filter summary bar
@@ -293,6 +317,7 @@ function renderTable(invoices) {
         html += '<button class="btn-view" onclick="showDetail(' + inv.id + ')">&#128065; View</button> ';
         html += '<a class="btn-view" href="receipt.php?id=' + inv.id + '" target="_blank">&#128424; Print</a>';
         if (isAdmin) {
+            html += ' <button class="btn-view" style="background:#e67e22" onclick="openRefundModal(' + inv.id + ', \'' + inv.invoice_number + '\')">&#8634; Return</button>';
             html += ' <button class="btn-delete" onclick="deleteInvoice(' + inv.id + ', \'' + inv.invoice_number + '\')">&#128465; Del</button>';
         }
         html += '</td>';
@@ -419,6 +444,117 @@ function deleteInvoice(id, invoiceNum) {
             }
         };
         xhr.send(JSON.stringify({id: id}));
+    });
+}
+
+// ===== REFUND FUNCTIONS =====
+var refundInvoiceId = null;
+var refundInvoiceNumber = null;
+var refundOriginalItems = [];
+
+function openRefundModal(id, invoiceNum) {
+    refundInvoiceId = id;
+    refundInvoiceNumber = invoiceNum;
+    document.getElementById('refund-invoice-info').innerHTML = '<b>Invoice:</b> ' + invoiceNum + ' (ID: ' + id + ')';
+    document.getElementById('refund-items-container').innerHTML = '<div class="loading">Loading items...</div>';
+    document.getElementById('refund-overlay').style.display = 'flex';
+
+    var xhr = new XMLHttpRequest();
+    xhr.open('GET', 'api/get_invoices.php?id=' + id, true);
+    xhr.onreadystatechange = function() {
+        if (xhr.readyState === 4 && xhr.status === 200) {
+            var inv = JSON.parse(xhr.responseText);
+            refundOriginalItems = inv.items || [];
+            renderRefundItems(refundOriginalItems);
+        }
+    };
+    xhr.send();
+}
+
+function renderRefundItems(items) {
+    if (!items || items.length === 0) {
+        document.getElementById('refund-items-container').innerHTML = '<div style="color:#7f8c8d">No items found.</div>';
+        return;
+    }
+
+    var html = '<table style="width:100%;font-size:13px;border-collapse:collapse;">';
+    html += '<tr style="background:#f8f9fa;border-bottom:2px solid #dee2e6;"><th style="padding:8px;text-align:left;">Item</th><th style="padding:8px;text-align:center;">Original Qty</th><th style="padding:8px;text-align:center;">Return Qty</th><th style="padding:8px;text-align:right;">Price</th></tr>';
+
+    for (var i = 0; i < items.length; i++) {
+        var item = items[i];
+        html += '<tr style="border-bottom:1px solid #e9ecef;">';
+        html += '<td style="padding:8px;">' + item.item_name + (item.size ? ' (' + item.size + ')' : '') + '</td>';
+        html += '<td style="padding:8px;text-align:center;">' + item.quantity + '</td>';
+        html += '<td style="padding:8px;text-align:center;"><input type="number" id="refund-qty-' + i + '" min="0" max="' + item.quantity + '" value="0" style="width:50px;padding:4px;text-align:center;border:1px solid #ced4da;border-radius:4px;"></td>';
+        html += '<td style="padding:8px;text-align:right;">' + parseFloat(item.price).toFixed(3) + '</td>';
+        html += '</tr>';
+    }
+
+    html += '</table>';
+    html += '<div style="margin-top:10px;font-size:12px;color:#7f8c8d;">Enter quantity to return for each item (0 = no return)</div>';
+    document.getElementById('refund-items-container').innerHTML = html;
+}
+
+function closeRefundModal() {
+    document.getElementById('refund-overlay').style.display = 'none';
+    refundInvoiceId = null;
+    refundInvoiceNumber = null;
+    refundOriginalItems = [];
+}
+
+function processRefund() {
+    var refundItems = [];
+    var totalRefund = 0;
+
+    for (var i = 0; i < refundOriginalItems.length; i++) {
+        var item = refundOriginalItems[i];
+        var qtyInput = document.getElementById('refund-qty-' + i);
+        var returnQty = parseInt(qtyInput.value) || 0;
+
+        if (returnQty > 0 && returnQty <= item.quantity) {
+            refundItems.push({
+                item_name: item.item_name,
+                item_name_ar: item.item_name_ar || '',
+                size: item.size || null,
+                price: item.price,
+                quantity: returnQty,
+                subtotal: item.price * returnQty
+            });
+            totalRefund += item.price * returnQty;
+        }
+    }
+
+    if (refundItems.length === 0) {
+        showConfirm('Error', 'Please select at least one item to return.', 'OK', '&#10060;', function(){});
+        return;
+    }
+
+    var reason = document.getElementById('refund-reason').value;
+
+    showConfirm('Confirm Refund', 'Process refund of <b>' + totalRefund.toFixed(3) + ' KD</b> for invoice ' + refundInvoiceNumber + '?<br><br>This will create a refund invoice.', 'Yes, Process', '&#8634;', function() {
+        var xhr = new XMLHttpRequest();
+        xhr.open('POST', 'api/process_refund.php', true);
+        xhr.setRequestHeader('Content-Type', 'application/json');
+        xhr.onreadystatechange = function() {
+            if (xhr.readyState === 4) {
+                var res = JSON.parse(xhr.responseText);
+                if (res.success) {
+                    showConfirm('Success', 'Refund processed successfully!<br>Refund Invoice: ' + res.refund_invoice_number, 'OK', '&#10004;', function(){
+                        closeRefundModal();
+                        loadInvoices(currentPage);
+                    });
+                } else {
+                    showConfirm('Error', 'Refund failed: ' + (res.error || 'Unknown error'), 'OK', '&#10060;', function(){});
+                }
+            }
+        };
+        xhr.send(JSON.stringify({
+            original_invoice_id: refundInvoiceId,
+            original_invoice_number: refundInvoiceNumber,
+            refund_items: refundItems,
+            refund_total: totalRefund,
+            refund_reason: reason
+        }));
     });
 }
 

@@ -205,6 +205,27 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         exit;
     }
 
+    if (isset($data['action']) && $data['action'] === 'convert_to_size_based') {
+        $id = intval($data['id']);
+        $base_price = floatval($data['base_price']);
+
+        if ($id <= 0 || $base_price < 0) {
+            echo json_encode(['error' => 'Invalid data']); exit;
+        }
+
+        // Convert: use base_price for medium, calculate small and large
+        $price_small = round($base_price * 0.85, 3);  // 15% less for small
+        $price_medium = $base_price;                   // same as original
+        $price_large = round($base_price * 1.15, 3);   // 15% more for large
+
+        $stmt = $conn->prepare("UPDATE items SET price = NULL, price_small = ?, price_medium = ?, price_large = ? WHERE id = ?");
+        $stmt->bind_param('dddi', $price_small, $price_medium, $price_large, $id);
+        $stmt->execute();
+        $stmt->close();
+        echo json_encode(['success' => true]);
+        exit;
+    }
+
     if (!isset($data['id'])) { echo json_encode(['error' => 'Missing ID']); exit; }
 
     $id    = intval($data['id']);

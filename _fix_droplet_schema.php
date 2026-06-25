@@ -62,6 +62,45 @@ if ($res->num_rows === 0) {
     $fixes[] = "Added logo_on_receipt column to company_settings";
 }
 
+// 9. subtotal column in invoices (for discount calculation)
+$res = $conn->query("SHOW COLUMNS FROM invoices LIKE 'subtotal'");
+if ($res->num_rows === 0) {
+    $conn->query("ALTER TABLE invoices ADD COLUMN subtotal DECIMAL(10,3) DEFAULT 0 AFTER payment_reference");
+    if ($conn->error) {
+        $fixes[] = "Error adding subtotal: " . $conn->error;
+    } else {
+        $fixes[] = "Added subtotal column to invoices";
+    }
+} else {
+    $fixes[] = "subtotal column already exists";
+}
+
+// 10. discount column in invoices (for discount amount)
+$res = $conn->query("SHOW COLUMNS FROM invoices LIKE 'discount'");
+if ($res->num_rows === 0) {
+    $conn->query("ALTER TABLE invoices ADD COLUMN discount DECIMAL(10,3) DEFAULT 0 AFTER subtotal");
+    if ($conn->error) {
+        $fixes[] = "Error adding discount: " . $conn->error;
+    } else {
+        $fixes[] = "Added discount column to invoices";
+    }
+} else {
+    $fixes[] = "discount column already exists";
+}
+
+// 11. refund_invoice_id column in invoices (to link refund to original invoice)
+$res = $conn->query("SHOW COLUMNS FROM invoices LIKE 'refund_invoice_id'");
+if ($res->num_rows === 0) {
+    $conn->query("ALTER TABLE invoices ADD COLUMN refund_invoice_id INT DEFAULT NULL AFTER discount");
+    if ($conn->error) {
+        $fixes[] = "Error adding refund_invoice_id: " . $conn->error;
+    } else {
+        $fixes[] = "Added refund_invoice_id column to invoices";
+    }
+} else {
+    $fixes[] = "refund_invoice_id column already exists";
+}
+
 echo count($fixes) ? implode("\n", $fixes) : 'No schema changes needed — everything is up to date.';
 
 $conn->close();

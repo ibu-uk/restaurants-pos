@@ -17,10 +17,13 @@ $whereUser = is_admin() ? '' : ' AND user_id = ' . intval(current_user()['id']);
 $whereUser .= " AND COALESCE(status, 'paid') = 'paid'";
 $whereToday = "created_at BETWEEN '$rangeStart' AND '$rangeEnd'";
 $today_summary = $conn->query("SELECT COUNT(*) as invoice_count, COALESCE(SUM(total), 0) as total_sales, COALESCE(SUM(cash_paid), 0) as total_paid FROM invoices WHERE $whereToday $whereUser")->fetch_assoc();
+$refund_summary = $conn->query("SELECT COUNT(*) as refund_count, COALESCE(SUM(ABS(total)), 0) as refund_total FROM invoices WHERE $whereToday AND payment_mode = 'Refund' $whereUser")->fetch_assoc();
 $cash_summary  = $conn->query("SELECT COUNT(*) as invoice_count, COALESCE(SUM(total), 0) as total_sales FROM invoices WHERE $whereToday AND payment_mode = 'Cash' $whereUser")->fetch_assoc();
 $knet_summary  = $conn->query("SELECT COUNT(*) as invoice_count, COALESCE(SUM(total), 0) as total_sales FROM invoices WHERE $whereToday AND payment_mode = 'KNET' $whereUser")->fetch_assoc();
 $user_summary  = $conn->query("SELECT COALESCE(user_name, 'Unknown') as user_name, COUNT(*) as invoice_count, COALESCE(SUM(total), 0) as total_sales FROM invoices WHERE $whereToday $whereUser GROUP BY user_id, user_name ORDER BY total_sales DESC");
 $latest        = $conn->query("SELECT * FROM invoices WHERE $whereToday $whereUser ORDER BY created_at DESC LIMIT 10");
+$whereUserNoRefund = $whereUser . " AND payment_mode != 'Refund'";
+$whereUserItems = $whereUser . " AND i.payment_mode != 'Refund'";
 
 // Daily sales summary (per date breakdown by payment mode) for the selected range
 $daily_summary_res = $conn->query("SELECT DATE(created_at) as sale_date,
@@ -49,7 +52,7 @@ if ($itemFilter !== '') {
 $items_sold_res = $conn->query("SELECT ii.item_name, ii.item_name_ar, SUM(ii.quantity) as qty_sold, SUM(ii.subtotal) as revenue
     FROM invoice_items ii
     INNER JOIN invoices i ON i.id = ii.invoice_id
-    WHERE i.$whereToday $whereUser $itemFilterSql
+    WHERE i.$whereToday $whereUserItems $itemFilterSql
     GROUP BY ii.item_name, ii.item_name_ar
     ORDER BY qty_sold DESC");
 $items_sold_arr = [];
@@ -156,6 +159,7 @@ td { padding:10px 12px; border-bottom:1px solid #e9ecef; font-size:13px; }
     <div class="card"><div class="label"><?php echo $periodLabel; ?> Invoices</div><div class="value"><?php echo intval($today_summary['invoice_count']); ?></div></div>
     <div class="card cash"><div class="label">Cash Sale</div><div class="value"><?php echo number_format($cash_summary['total_sales'], 3); ?> KD</div></div>
     <div class="card knet"><div class="label">KNET Sale</div><div class="value"><?php echo number_format($knet_summary['total_sales'], 3); ?> KD</div></div>
+    <div class="card" style="border-left:4px solid #e74c3c;"><div class="label"><?php echo $periodLabel; ?> Refunds</div><div class="value" style="color:#e74c3c;"><?php echo intval($refund_summary['refund_count']); ?> <span style="font-size:14px;color:#7f8c8d;">(<?php echo number_format($refund_summary['refund_total'], 3); ?> KD)</span></div></div>
   </div>
   <!-- DAILY SALES SUMMARY REPORT (Print / PDF / Excel) -->
   <div class="section" style="margin-bottom:22px;">

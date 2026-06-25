@@ -19,6 +19,8 @@ if (!$data || empty($data['items'])) {
     exit;
 }
 
+$subtotal     = isset($data['subtotal']) ? floatval($data['subtotal']) : floatval($data['total']);
+$discount     = isset($data['discount']) ? floatval($data['discount']) : 0;
 $total        = floatval($data['total']);
 $cash_paid    = floatval($data['cash_paid']);
 $change_due   = floatval($data['change_due']);
@@ -68,8 +70,8 @@ try {
 
     if ($invoice_id) {
         // Update the existing open invoice -> paid, and replace its items
-        $upd = $conn->prepare("UPDATE invoices SET payment_mode = ?, payment_reference = ?, status = 'paid', total = ?, cash_paid = ?, change_due = ?, user_name = ? WHERE id = ?");
-        $upd->bind_param('ssdddsi', $payment_mode, $payment_reference, $total, $cash_paid, $change_due, $user_name, $invoice_id);
+        $upd = $conn->prepare("UPDATE invoices SET payment_mode = ?, payment_reference = ?, status = 'paid', subtotal = ?, discount = ?, total = ?, cash_paid = ?, change_due = ?, user_name = ? WHERE id = ?");
+        $upd->bind_param('ssdddddsi', $payment_mode, $payment_reference, $subtotal, $discount, $total, $cash_paid, $change_due, $user_name, $invoice_id);
         $upd->execute();
         $upd->close();
 
@@ -79,8 +81,8 @@ try {
         $delItems->close();
     } else {
         // Insert a brand new paid invoice
-        $stmt = $conn->prepare("INSERT INTO invoices (invoice_number, user_id, user_name, table_id, table_name, payment_mode, payment_reference, status, total, cash_paid, change_due) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)");
-        $stmt->bind_param('sisissssddd', $invoice_number, $user_id, $user_name, $table_id, $table_name, $payment_mode, $payment_reference, $status, $total, $cash_paid, $change_due);
+        $stmt = $conn->prepare("INSERT INTO invoices (invoice_number, user_id, user_name, table_id, table_name, payment_mode, payment_reference, status, subtotal, discount, total, cash_paid, change_due) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)");
+        $stmt->bind_param('sisissssddddd', $invoice_number, $user_id, $user_name, $table_id, $table_name, $payment_mode, $payment_reference, $status, $subtotal, $discount, $total, $cash_paid, $change_due);
         $stmt->execute();
         $invoice_id = $conn->insert_id;
         $stmt->close();
